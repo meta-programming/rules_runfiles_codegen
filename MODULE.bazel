@@ -1,0 +1,4 @@
+module(
+    name = "rules_runfiles_codegen",
+    version = "0.0.1",
+)

@@ -1,0 +1,17 @@
+module(
+    name = "example_go_runfiles",
+    version = "0.0.1",
+)
+
+bazel_dep(name = "rules_go", version = "0.46.0")
+bazel_dep(name = "rules_runfiles_codegen_go", version = "0.0.1")
+bazel_dep(name = "rules_runfiles_codegen", version = "0.0.1")
+
+local_path_override(
+    module_name = "rules_runfiles_codegen_go",
+    path = "../../go",
+)
+local_path_override(
+    module_name = "rules_runfiles_codegen",
+    path = "../..",
+)
