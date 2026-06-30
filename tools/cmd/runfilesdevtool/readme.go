@@ -21,22 +21,46 @@ var updateReadmeCmd = &cobra.Command{
 	},
 }
 
+// LanguageConfig defines the paths and markers for a language module's examples.
+type LanguageConfig struct {
+	ID         string // "go", "kotlin" (used in paths: examples/<ID>/)
+	LangMarker string // "GO", "KOTLIN" (used in README markers: <!-- <MARKER>_INSTALL_START -->)
+	Extension  string // "go", "kotlin" (used for markdown code block syntax highlighting)
+	UsageFile  string // "main.go", "Main.kt" (relative to examples/<ID>/)
+	GenFile    string // "bazel-bin/...go" (relative to examples/<ID>/)
+}
+
+var languages = []LanguageConfig{
+	{
+		ID:         "go",
+		LangMarker: "GO",
+		Extension:  "go",
+		UsageFile:  "main.go",
+		GenFile:    "bazel-bin/resources_codegen_gen.go",
+	},
+	{
+		ID:         "kotlin",
+		LangMarker: "KOTLIN",
+		Extension:  "kotlin",
+		UsageFile:  "Main.kt",
+		GenFile:    "bazel-bin/resources_codegen_gen.kt",
+	},
+}
+
 func runUpdateReadme() error {
 	readmePath := filepath.Join(resolvedRoot, "README.md")
 	coreModulePath := filepath.Join(resolvedRoot, "core/MODULE.bazel")
-
-	goBuild := filepath.Join(resolvedRoot, "examples/go/BUILD.bazel")
-	goUsage := filepath.Join(resolvedRoot, "examples/go/main.go")
-	goGen := filepath.Join(resolvedRoot, "examples/go/bazel-bin/resources_codegen_gen.go")
-
-	kotlinBuild := filepath.Join(resolvedRoot, "examples/kotlin/BUILD.bazel")
-	kotlinUsage := filepath.Join(resolvedRoot, "examples/kotlin/Main.kt")
-	kotlinGen := filepath.Join(resolvedRoot, "examples/kotlin/bazel-bin/resources_codegen_gen.kt")
 
 	version, err := parseModuleVersion(coreModulePath)
 	if err != nil {
 		return fmt.Errorf("failed to parse core version: %w", err)
 	}
+
+	readmeBytes, err := os.ReadFile(readmePath)
+	if err != nil {
+		return err
+	}
+	readmeContent := string(readmeBytes)
 
 	read := func(path string) (string, error) {
 		content, err := os.ReadFile(path)
@@ -46,63 +70,46 @@ func runUpdateReadme() error {
 		return strings.TrimSpace(string(content)), nil
 	}
 
-	var goBuildRaw, goUsageRaw, goGenRaw string
-	var kotlinBuildRaw, kotlinUsageRaw, kotlinGenRaw string
+	for _, lang := range languages {
+		buildPath := filepath.Join(resolvedRoot, "examples", lang.ID, "BUILD.bazel")
+		usagePath := filepath.Join(resolvedRoot, "examples", lang.ID, lang.UsageFile)
+		genPath := filepath.Join(resolvedRoot, "examples", lang.ID, lang.GenFile)
 
-	if goBuildRaw, err = read(goBuild); err != nil {
-		return err
-	}
-	if goUsageRaw, err = read(goUsage); err != nil {
-		return err
-	}
-	if goGenRaw, err = read(goGen); err != nil {
-		return fmt.Errorf("%w (make sure you have run 'bazel build //...' in examples/go)", err)
-	}
-
-	if kotlinBuildRaw, err = read(kotlinBuild); err != nil {
-		return err
-	}
-	if kotlinUsageRaw, err = read(kotlinUsage); err != nil {
-		return err
-	}
-	if kotlinGenRaw, err = read(kotlinGen); err != nil {
-		return fmt.Errorf("%w (make sure you have run 'bazel build //...' in examples/kotlin)", err)
-	}
-
-	goBuildSnippet := extractSection(goBuildRaw, "quickstart")
-	kotlinBuildSnippet := extractSection(kotlinBuildRaw, "quickstart")
-
-	readmeBytes, err := os.ReadFile(readmePath)
-	if err != nil {
-		return err
-	}
-	readmeContent := string(readmeBytes)
-
-	goInstall := fmt.Sprintf("# MODULE.bazel\nbazel_dep(name = \"rules_runfile_codegen_go\", version = \"%s\")", version)
-	kotlinInstall := fmt.Sprintf("# MODULE.bazel\nbazel_dep(name = \"rules_runfile_codegen_kotlin\", version = \"%s\")", version)
-
-	type replacement struct {
-		startMarker string
-		endMarker   string
-		language    string
-		content     string
-	}
-
-	replacements := []replacement{
-		{"<!-- GO_INSTALL_START -->", "<!-- GO_INSTALL_END -->", "bazel", goInstall},
-		{"<!-- KOTLIN_INSTALL_START -->", "<!-- KOTLIN_INSTALL_END -->", "bazel", kotlinInstall},
-		{"<!-- GO_BUILD_START -->", "<!-- GO_BUILD_END -->", "bazel", goBuildSnippet},
-		{"<!-- GO_USAGE_START -->", "<!-- GO_USAGE_END -->", "go", goUsageRaw},
-		{"<!-- GENERATED_GO_START -->", "<!-- GENERATED_GO_END -->", "go", goGenRaw},
-		{"<!-- KOTLIN_BUILD_START -->", "<!-- KOTLIN_BUILD_END -->", "bazel", kotlinBuildSnippet},
-		{"<!-- KOTLIN_USAGE_START -->", "<!-- KOTLIN_USAGE_END -->", "kotlin", kotlinUsageRaw},
-		{"<!-- GENERATED_KOTLIN_START -->", "<!-- GENERATED_KOTLIN_END -->", "kotlin", kotlinGenRaw},
-	}
-
-	for _, r := range replacements {
-		readmeContent, err = replaceBlock(readmeContent, r.startMarker, r.endMarker, r.language, r.content)
+		buildRaw, err := read(buildPath)
 		if err != nil {
-			return fmt.Errorf("failed to replace block %s: %w", r.startMarker, err)
+			return err
+		}
+		usageRaw, err := read(usagePath)
+		if err != nil {
+			return err
+		}
+		genRaw, err := read(genPath)
+		if err != nil {
+			return fmt.Errorf("%w (make sure you have run 'bazel build //...' in examples/%s)", err, lang.ID)
+		}
+
+		buildSnippet := extractSection(buildRaw, "quickstart")
+		installSnippet := fmt.Sprintf("# MODULE.bazel\nbazel_dep(name = \"rules_runfile_codegen_%s\", version = \"%s\")", lang.ID, version)
+
+		type replacement struct {
+			startMarker string
+			endMarker   string
+			language    string
+			content     string
+		}
+
+		replacements := []replacement{
+			{fmt.Sprintf("<!-- %s_INSTALL_START -->", lang.LangMarker), fmt.Sprintf("<!-- %s_INSTALL_END -->", lang.LangMarker), "bazel", installSnippet},
+			{fmt.Sprintf("<!-- %s_BUILD_START -->", lang.LangMarker), fmt.Sprintf("<!-- %s_BUILD_END -->", lang.LangMarker), "bazel", buildSnippet},
+			{fmt.Sprintf("<!-- %s_USAGE_START -->", lang.LangMarker), fmt.Sprintf("<!-- %s_USAGE_END -->", lang.LangMarker), lang.Extension, usageRaw},
+			{fmt.Sprintf("<!-- GENERATED_%s_START -->", lang.LangMarker), fmt.Sprintf("<!-- GENERATED_%s_END -->", lang.LangMarker), lang.Extension, genRaw},
+		}
+
+		for _, r := range replacements {
+			readmeContent, err = replaceBlock(readmeContent, r.startMarker, r.endMarker, r.language, r.content)
+			if err != nil {
+				return fmt.Errorf("failed to replace block %s: %w", r.startMarker, err)
+			}
 		}
 	}
 
