@@ -166,7 +166,7 @@ def kt_jvm_runfile_library(name, package, entries, object_name = None, **kwargs)
         name = name,
         srcs = [":" + name + "_codegen"],  # Use the generator target directly
         deps = [
-            "@rules_runfile_codegen_kotlin//runfile",
+            "@rules_runfile_codegen_kotlin//runfiles",
         ] + user_deps,
         data = targets + user_data,
         **kwargs

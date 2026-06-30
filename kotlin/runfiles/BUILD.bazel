@@ -3,7 +3,7 @@ load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library", "kt_jvm_test")
 package(default_visibility = ["//visibility:public"])
 
 kt_jvm_library(
-    name = "runfile",
+    name = "runfiles",
     srcs = ["Runfile.kt"],
     deps = [
         "@bazel_tools//tools/java/runfiles",
@@ -18,7 +18,7 @@ kt_jvm_test(
         "Runfile.kt",
     ],
     deps = [
-        ":runfile",
+        ":runfiles",
         "@maven//:junit_junit",
     ],
 )

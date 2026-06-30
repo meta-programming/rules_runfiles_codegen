@@ -127,7 +127,7 @@ class RunfileTest {
         // Since we are running under Bazel, the default resolver should be able to resolve
         // files declared in the `data` attribute of this test.
         // We declared "Runfile.kt" as data in the BUILD file.
-        val spec = FileSpec(RlocationPath("rules_runfile_codegen_kotlin/runfile/Runfile.kt"))
+        val spec = FileSpec(RlocationPath("rules_runfile_codegen_kotlin/runfiles/Runfile.kt"))
         val file = spec.resolve()
         assertNotNull(file.path)
         assertTrue(file.file.exists())
