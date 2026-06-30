@@ -139,7 +139,7 @@ Create a standalone Bazel workspace in `repo/examples/<lang>/` to demonstrate us
 
 To enable automatic documentation updates and version management, you must register the new language with the devtool.
 
-Follow the instructions in [tools/cmd/devtool/languages.go](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/tools/cmd/devtool/languages.go) to register the new language and set up the required placeholders in the README.md.
+Follow the instructions in [`languages.go`](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/tools/cmd/devtool/languages.go) to register the new language and set up the required placeholders in the README.md.
 
 ### 4. Create Integration Tests
 
