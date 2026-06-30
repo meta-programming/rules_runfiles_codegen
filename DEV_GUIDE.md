@@ -82,7 +82,7 @@ tools/devtool [command]
 ### Updating the Documentation
 
 The repository contains two types of generated documentation that must be kept in sync:
-*   **[README.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/README.md)**: Contains embedded code snippets (quickstarts, usage examples, and actual generated code) that are synchronized from the example workspaces.
+*   **[README.md](README.md)**: Contains embedded code snippets (quickstarts, usage examples, and actual generated code) that are synchronized from the example workspaces.
 *   **API Reference (Stardoc)**: The Stardoc markdown files (`go/docs/defs.md` and `kotlin/docs/defs.md`) are generated from the Starlark docstrings.
 
 If you make changes to the code generators, examples, or Starlark docstrings, you must update the documentation before committing.
@@ -139,7 +139,7 @@ Create a standalone Bazel workspace in `repo/examples/<lang>/` to demonstrate us
 
 To enable automatic documentation updates and version management, you must register the new language with the devtool.
 
-Follow the instructions in [`languages.go`](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/tools/cmd/devtool/languages.go) to register the new language and set up the required placeholders in the README.md.
+Follow the instructions in [`languages.go`](tools/cmd/devtool/languages.go) to register the new language and set up the required placeholders in the README.md.
 
 ### 4. Create Integration Tests
 
@@ -161,4 +161,4 @@ Since each language module is published separately to the Bazel Central Registry
 
 ## Project Structure Reference
 
-For details on the architecture, code generation design, and path resolution logic, see **[DESIGN.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/DESIGN.md)**.
+For details on the architecture, code generation design, and path resolution logic, see **[DESIGN.md](DESIGN.md)**.
