@@ -73,18 +73,15 @@ def kt_jvm_runfile_library(name, package, entries, object_name = None, **kwargs)
     package com.example.project
 
     import com.example.project.runfiles.MyRunfiles
-    import java.io.File
 
     fun main() {
         // 1. Accessing a regular runfile:
-        // Resolve the spec to a File (throws exception on failure).
-        val configFile = MyRunfiles.configJson.resolve()
-        val configPath = configFile.path
-        val content = File(configPath).readText()
+        // Resolve the spec and read its content directly.
+        val content = MyRunfiles.configJson.resolve().file.readText()
         println("Content: $content")
 
-        // Or use jvmPath on the resolved File
-        val configJvmPath = configFile.jvmPath
+        // Or use jvmPath by resolving the spec first
+        val configJvmPath = MyRunfiles.configJson.resolve().jvmPath
         
         // 2. Running an executable runfile:
         // Resolve the spec to an Executable, then get the process builder.
