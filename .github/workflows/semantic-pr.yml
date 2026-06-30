@@ -1,4 +1,4 @@
-# This workflow validates that pull request titles follow the Conventional Commits specification.
+# This workflow validates that pull request titles follow the [Conventional Commits specification](https://www.conventionalcommits.org/).
 # It ensures that squash-merged commits landing on the main branch maintain a clean, semantic history.
 name: "Semantic PR"
 

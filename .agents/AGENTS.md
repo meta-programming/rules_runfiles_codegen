@@ -13,6 +13,7 @@
 # Language and tone style rules
 
 *   **Style guide**: Adhere to the [Google Developer Documentation Style Guide](https://developers.google.com/style) for general writing style, tone, and formatting (e.g., use sentence case for all headings and list items).
+*   **External references**: When referencing a specification, standard, or official documentation, err on the side of including a link to the external resource in the documentation or comments. This allows the reader to easily verify and consult the reference.
 *   **Plain and understated language**: Use plain, direct, and understated language. Avoid marketing-speak, exaggerations, and hyperbole (e.g., do not use words like "beautifully", "extremely", "perfectly", "easily" unless they are factually verifiable and necessary).
 *   **Minimal jargon**: Keep technical jargon to a minimum. Explain concepts simply and clearly.
 *   **No unnecessary capitalization**: Do not capitalize words unnecessarily. Only capitalize proper nouns, the first word of a sentence, or well-established acronyms. Avoid capitalizing general terms (e.g., prefer "pull request" over "Pull Request", "versioning policy" over "Versioning Policy" in body text, unless they are headings).
