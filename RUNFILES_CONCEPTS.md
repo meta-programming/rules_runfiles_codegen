@@ -16,7 +16,7 @@ The top-level directory containing the entire runfiles structure for a target. I
 *   *Example Path*: `bazel-bin/src/main.runfiles/`
 
 ### Workspace/Repository Subdirectory
-A directory located directly *under* the Runfiles Root. It is named after a Bazel repository (either the main workspace or an external dependency).
+ A directory located directly *under* the Runfiles Root. It is named after a Bazel repository (either the main workspace or an external dependency).
 *   *Example Path*: `bazel-bin/src/main.runfiles/my_project/`
 
 ### Runfiles-Root-Relative Path (Rlocation Path)
@@ -68,6 +68,12 @@ The transition from the legacy `WORKSPACE` system to `Bzlmod` (Bazel's module sy
 *   **Physical Layout**: Under Bzlmod, the subdirectories under the Runfiles Root are named using **canonical names**, not apparent names.
     *   *Citation*: [Bazel External Dependencies: Canonical Repository Name](https://bazel.build/external/overview#canonical-repo-name)
         > "The canonical repository name of a repository is the name of the directory it occupies in the execution root and in the runfiles directory."
+
+### The Special `_main` Repository Name
+Under Bzlmod, the main repository (your project) is assigned the fixed canonical name **`_main`** in the runfiles directory, decoupling it from any arbitrary names defined in legacy `WORKSPACE` files.
+*   *Citation*: [Bazel Bzlmod Migration Guide](https://bazel.build/external/migration) & [Starlark API: `ctx.workspace_name`](https://bazel.build/rules/lib/builtins/ctx#workspace_name)
+    > "When `--enable_bzlmod` is active, `ctx.workspace_name` (which acts as the execution root name and runfiles prefix for the main repo) is fixed to the string `_main`. Previously, this was determined by the name defined in the `WORKSPACE` file."
+*   *Impact*: If Bzlmod is active, paths to your own project's runfiles will always begin with `_main/` (e.g., `_main/data/config.json`) unless a legacy workspace name is explicitly configured.
 
 ### The Repository Mapping File (`_repo_mapping`)
 Because canonical names are unstable and contain version numbers, developers must never hardcode them in `rlocation` calls. Instead, they must use the **apparent name**.
