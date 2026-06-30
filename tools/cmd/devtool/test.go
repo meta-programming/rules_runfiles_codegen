@@ -41,7 +41,7 @@ func runTests() error {
 	var failedWorkspaces []string
 	for _, t := range targets {
 		dir := filepath.Join(resolvedRoot, t.workspace)
-		fmt.Printf("\n=== Running tests in %s (%s) ===\n", t.workspace, t.target)
+		fmt.Printf("\n=== Running Bazel tests in %s (%s) ===\n", t.workspace, t.target)
 
 		cmd := exec.Command("bazel", "test", "--test_output=errors", t.target)
 		cmd.Dir = dir
@@ -49,13 +49,24 @@ func runTests() error {
 		cmd.Stderr = os.Stderr
 
 		if err := cmd.Run(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: tests in %s failed: %v\n", t.workspace, err)
+			fmt.Fprintf(os.Stderr, "Error: Bazel tests in %s failed: %v\n", t.workspace, err)
 			failedWorkspaces = append(failedWorkspaces, t.workspace)
 		}
 	}
 
+	// Run Go tests in tools directory
+	fmt.Println("\n=== Running Go tests in tools ===")
+	goTestCmd := exec.Command("go", "test", "./...")
+	goTestCmd.Dir = filepath.Join(resolvedRoot, "tools")
+	goTestCmd.Stdout = os.Stdout
+	goTestCmd.Stderr = os.Stderr
+	if err := goTestCmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Go tests in tools failed: %v\n", err)
+		failedWorkspaces = append(failedWorkspaces, "tools (go)")
+	}
+
 	if len(failedWorkspaces) > 0 {
-		return fmt.Errorf("test suites failed in workspaces: %s", strings.Join(failedWorkspaces, ", "))
+		return fmt.Errorf("test suites failed: %s", strings.Join(failedWorkspaces, ", "))
 	}
 	fmt.Println("\n=== All test suites passed! ===")
 	return nil
