@@ -146,7 +146,7 @@ def go_runfile_library(name, importpath, entries, **kwargs):
         srcs = [":" + name + "_codegen"],
         importpath = importpath,
         deps = [
-            "@rules_go//go/runfiles",
+            "@rules_runfile_codegen_go//runfile",
         ] + user_deps,  # Merge deps
         data = targets + user_data,  # Merge data
         **kwargs

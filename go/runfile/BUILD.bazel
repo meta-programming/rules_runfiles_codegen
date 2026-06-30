@@ -1,0 +1,11 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "runfile",
+    srcs = ["runfile.go"],
+    importpath = "github.com/meta-programming/rules_runfiles_codegen/go/runfile",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@rules_go//go/runfiles",
+    ],
+)
