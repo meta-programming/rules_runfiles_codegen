@@ -96,10 +96,11 @@ func NewSpec(rlocationpath string) FileSpec {
 	return FileSpec{rlocation: rlocationpath}
 }
 
-// RlocationPath returns the logical, workspace-relative path of the runfile
-// (e.g., "my_project/data/config.json").
+// RlocationPath returns the logical, runfiles-root-relative path of the runfile
+// (e.g., "my_project/data/config.json" or "my_dep~1.0/data/config.json").
 //
-// This is the key used to look up the runfile in the runfiles manifest or directory.
+// This path can be either apparent or canonical, depending on how the spec was created.
+// It serves as the key used to look up the runfile in the runfiles manifest or directory.
 // For details on how Bazel structures these paths, see the [Bazel Runfiles Guide](https://bazel.build/extending/rules#runfiles).
 func (fs FileSpec) RlocationPath() string {
 	return fs.rlocation
@@ -184,10 +185,11 @@ type File struct {
 	absPath   string
 }
 
-// RlocationPath returns the logical, workspace-relative path of the runfile
-// (e.g., "my_project/data/config.json").
+// RlocationPath returns the logical, runfiles-root-relative path of the runfile
+// (e.g., "my_project/data/config.json" or "my_dep~1.0/data/config.json").
 //
-// This is the key used to look up the runfile in the runfiles manifest or directory.
+// This path can be either apparent or canonical, depending on how the spec was resolved.
+// It serves as the key used to look up the runfile in the runfiles manifest or directory.
 // For details on how Bazel structures these paths, see the [Bazel Runfiles Guide](https://bazel.build/extending/rules#runfiles).
 func (f File) RlocationPath() string {
 	return f.rlocation
