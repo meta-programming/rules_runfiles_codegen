@@ -23,8 +23,6 @@ To enable the automatic publishing workflow, the following setup is required on 
 
 To support publishing multiple Bazel modules from this single repository, each module (`core`, `go`, `kotlin`) contains a `source.template.json` file in its root directory (e.g., [go/source.template.json](../go/source.template.json)).
 
-Because these files are parsed as JSON by the `publish-to-bcr` tooling (which uses `jq`), **standard comments are not allowed** within the files themselves as they would cause syntax errors.
-
 ### Template Structure:
 *   **`url`**: The URL of the GitHub release archive to download for a given release tag.
 *   **`strip_prefix`**: Specifies the subdirectory within the release archive that contains the module's code. This allows Bazel to isolate `core`, `go`, and `kotlin` as independent modules even though they share the same release archive.
