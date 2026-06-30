@@ -1,4 +1,4 @@
-package com.github.metaprogramming.runfile
+package com.github.metaprogramming.runfiles
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

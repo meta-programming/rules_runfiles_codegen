@@ -1,4 +1,4 @@
-package com.github.metaprogramming.runfile
+package com.github.metaprogramming.runfiles
 
 import com.google.devtools.build.runfiles.Runfiles
 import java.io.File as JFile

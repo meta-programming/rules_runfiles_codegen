@@ -301,9 +301,9 @@ fun main() {
 // This file provides type-safe access to Bazel runfiles.
 package com.example.project.examples.resources
 
-import com.github.metaprogramming.runfile.FileSpec
-import com.github.metaprogramming.runfile.ExecutableSpec
-import com.github.metaprogramming.runfile.RlocationPath
+import com.github.metaprogramming.runfiles.FileSpec
+import com.github.metaprogramming.runfiles.ExecutableSpec
+import com.github.metaprogramming.runfiles.RlocationPath
 
 object Resources {
     /**
