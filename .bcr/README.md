@@ -16,3 +16,17 @@ To enable the automatic publishing workflow, the following setup is required on 
 2.  **Create a personal access token**: Generate a fine-grained GitHub personal access token (PAT) with write access restricted only to your `bazel-central-registry` fork repository.
 3.  **Configure repository secret**: Add the generated token as a repository secret named `BCR_PUBLISH_TOKEN` in the `rules_runfiles_codegen` repository settings (`Settings -> Secrets and variables -> Actions`).
 4.  **Submit pull requests**: Because fine-grained PATs cannot automatically create cross-repository pull requests, the workflow has `open_pull_request` set to `false`. It will push to your fork and output a URL in the workflow logs. You must click this URL to manually open the pull request against the upstream registry.
+
+---
+
+## Source Templates (`source.template.json`)
+
+To support publishing multiple Bazel modules from this single repository, each module (`core`, `go`, `kotlin`) contains a `source.template.json` file in its root directory (e.g., [go/source.template.json](../go/source.template.json)).
+
+Because these files are parsed as JSON by the `publish-to-bcr` tooling (which uses `jq`), **standard comments are not allowed** within the files themselves as they would cause syntax errors.
+
+### Template Structure:
+*   **`url`**: The URL of the GitHub release archive to download for a given release tag.
+*   **`strip_prefix`**: Specifies the subdirectory within the release archive that contains the module's code. This allows Bazel to isolate `core`, `go`, and `kotlin` as independent modules even though they share the same release archive.
+
+During a release, the GHA workflow automatically replaces `{TAG}` and `{VERSION}` with the actual release details, computes the SHA-256 integrity hash, and generates the final `source.json` for the BCR.
