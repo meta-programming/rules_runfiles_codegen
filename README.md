@@ -13,7 +13,7 @@ For complete, runnable projects demonstrating these quickstarts, see the [exampl
 ## Key Features
 
 *   **Type-Safety**: Runfiles are exposed as generated constants/properties. No more stringly-typed paths.
-*   **Init-time (Eager) Resolution**: Runfiles are resolved at program startup (`init` blocks). If a runfile is missing, the program panics (Go) or throws (Kotlin) immediately, ensuring **fail-at-startup** safety. *(Note: This behavior may be configurable in the future, pending further design.)*
+*   **Explicit (Non-Eager) Resolution**: We are evolving the library towards an explicit, non-eager resolution model to avoid startup side-effects and improve testability. Go is the first to adopt this design (using `Resolve()`), while Kotlin currently still resolves eagerly at startup but will be transitioned in a future release.
 *   **Subprocess Environment Propagation**: Executable runfiles are wrapped in rich objects that facilitate launching them as subprocesses while automatically propagating the Bazel runfiles environment. This ensures that child processes can also resolve their own runfiles.[^1]
 *   **Zero Runtime Overhead**: After successful startup-time resolution, accessing the runfile path is a simple member access with zero overhead.
 
@@ -117,19 +117,23 @@ import (
 )
 
 func main() {
-	// 1. Access the resolved runfile path.
-	// Resources are resolved at startup (init-time).
-	path := resources.DataFile.Path()
+	// 1. Access the resolved runfile path safely.
+	dataFile, err := resources.DataFile.Resolve()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error resolving runfile: %v\n", err)
+		os.Exit(1)
+	}
 
-	content, err := os.ReadFile(path)
+	content, err := os.ReadFile(dataFile.Path())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading runfile: %v\n", err)
 		os.Exit(1)
 	}
 	fmt.Printf("Data: %s\n", string(content))
 
-	// 2. Run an executable runfile with env propagation.
-	cmd := resources.HelperTool.Cmd()
+	// 2. Run an executable runfile with env propagation (fail-fast).
+	helper := resources.HelperTool.MustResolve()
+	cmd := helper.Cmd()
 	output, err := cmd.Output()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error running helper: %v\n", err)
@@ -153,73 +157,19 @@ func main() {
 package resources
 
 import (
-	"fmt"
-	"os"
-	"os/exec"
-	"github.com/bazelbuild/rules_go/go/runfiles"
+	"github.com/meta-programming/rules_runfiles_codegen/go/runfile"
 )
-
-// Runfile represents a resolved runfile.
-type Runfile struct {
-	absPath string
-}
-
-// Path returns the resolved absolute path of the runfile.
-func (r Runfile) Path() string {
-	return r.absPath
-}
-
-// ExecutableRunfile represents a resolved executable runfile.
-type ExecutableRunfile struct {
-	Runfile
-}
-
-// Cmd returns an *exec.Cmd pre-configured to run this executable,
-// with the Bazel runfiles environment variables already propagated.
-func (e ExecutableRunfile) Cmd(args ...string) *exec.Cmd {
-	cmd := exec.Command(e.Path(), args...)
-	if env, err := runfiles.Env(); err == nil {
-		cmd.Env = append(os.Environ(), env...)
-	}
-	return cmd
-}
 
 var (
 	// DataFile is A dummy data file.
 	// Source: @@//:data/dummy.txt
-	DataFile Runfile
+	DataFile = runfile.NewSpec("_main/data/dummy.txt")
 
 	// HelperTool is A helper tool executable.
 	// Source: @@//:helper
-	HelperTool ExecutableRunfile
+	HelperTool = runfile.NewExecutableSpec("_main/helper_/helper")
 
 )
-
-func init() {
-	reg, err := runfiles.New()
-	if err != nil {
-		panic(fmt.Sprintf("failed to initialize runfiles: %v", err))
-	}
-
-	DataFile = mustResolve(reg, "_main/data/dummy.txt")
-	HelperTool = mustResolveExecutable(reg, "_main/helper_/helper")
-}
-
-func mustResolve(reg *runfiles.Runfiles, rlocationPath string) Runfile {
-	absPath, err := reg.Rlocation(rlocationPath)
-	if err != nil {
-		panic(fmt.Sprintf("failed to resolve runfile %q: %v", rlocationPath, err))
-	}
-	return Runfile{absPath: absPath}
-}
-
-func mustResolveExecutable(reg *runfiles.Runfiles, rlocationPath string) ExecutableRunfile {
-	absPath, err := reg.Rlocation(rlocationPath)
-	if err != nil {
-		panic(fmt.Sprintf("failed to resolve executable runfile %q: %v", rlocationPath, err))
-	}
-	return ExecutableRunfile{Runfile{absPath: absPath}}
-}
 ```
 <!-- GENERATED_GO_END -->
 </details>
@@ -402,11 +352,12 @@ object Resources {
 
 ## Design Philosophy
 
-### Eager (Init-time) Resolution
-We deliberately chose **eager resolution** over lazy resolution for both Go and Kotlin. 
-*   **The Problem with Lazy Resolution**: If a runfile is missing (e.g., due to a misconfigured `data` dependency in a `BUILD.bazel` file), a lazy implementation would only fail when the code actually tries to access the runfile. This could happen hours or days into a production deployment.
-*   **The Eager Solution**: By resolving all runfiles during module initialization (`init` blocks), we guarantee that if *any* runfile is missing, the program will fail immediately at startup. This aligns with the "fail-fast" principle and makes deployments much safer.
-*   **Future Configurability**: Note that this behavior may be configurable in the future (e.g., allowing lazy resolution via a macro attribute), pending further design.
+### Evolution Towards Non-Eager (Explicit) Resolution
+We are actively evolving the library away from eager resolution at startup towards an **explicit, non-eager (lazy)** model.
+
+*   **Why the shift?** Eager resolution (resolving everything during module initialization or `init` blocks) can cause dangerous side-effects, makes unit testing and mocking difficult, and violates best practices in many languages (especially Go).
+*   **Go (Modern)**: Uses the new explicit model. The generated code defines unresolved `FileSpec` and `ExecutableSpec` symbols. The developer must explicitly call `.Resolve()` or `.MustResolve()` at runtime. This avoids `init()` panics and allows injecting mock resolvers for testing.
+*   **Kotlin (Legacy/Transitioning)**: Currently still uses the older eager model (resolving during `Resources` object initialization). We plan to transition Kotlin and other future languages to the explicit model in upcoming releases to ensure consistency and safety.
 
 ### Rich Object Wrapper
 Rather than just returning raw string paths, the generators wrap runfiles in rich objects (`Runfile` and `ExecutableRunfile`).

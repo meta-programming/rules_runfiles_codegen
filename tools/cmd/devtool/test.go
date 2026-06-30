@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -37,24 +38,24 @@ var targets = []testTarget{
 }
 
 func runTests() error {
-	failed := false
+	var failedWorkspaces []string
 	for _, t := range targets {
 		dir := filepath.Join(resolvedRoot, t.workspace)
 		fmt.Printf("\n=== Running tests in %s (%s) ===\n", t.workspace, t.target)
 
-		cmd := exec.Command("bazel", "test", t.target)
+		cmd := exec.Command("bazel", "test", "--test_output=errors", t.target)
 		cmd.Dir = dir
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
 		if err := cmd.Run(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: tests in %s failed: %v\n", t.workspace, err)
-			failed = true
+			failedWorkspaces = append(failedWorkspaces, t.workspace)
 		}
 	}
 
-	if failed {
-		return fmt.Errorf("some test suites failed")
+	if len(failedWorkspaces) > 0 {
+		return fmt.Errorf("test suites failed in workspaces: %s", strings.Join(failedWorkspaces, ", "))
 	}
 	fmt.Println("\n=== All test suites passed! ===")
 	return nil

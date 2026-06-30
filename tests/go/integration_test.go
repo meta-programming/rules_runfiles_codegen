@@ -10,7 +10,12 @@ import (
 )
 
 func TestDataFile(t *testing.T) {
-	path := test_resources.DataFile.Path()
+	resolved, err := test_resources.DataFile.Resolve()
+	if err != nil {
+		t.Fatalf("Failed to resolve DataFile: %v", err)
+	}
+
+	path := resolved.Path()
 	if path == "" {
 		t.Fatal("DataFile path is empty")
 	}
@@ -28,7 +33,10 @@ func TestDataFile(t *testing.T) {
 }
 
 func TestHelperTool(t *testing.T) {
-	cmd := test_resources.HelperTool.Cmd()
+	// Test the MustResolve API
+	helper := test_resources.HelperTool.MustResolve()
+	cmd := helper.Cmd()
+	
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -46,7 +54,12 @@ func TestHelperTool(t *testing.T) {
 }
 
 func TestExternalFile(t *testing.T) {
-	path := test_resources.ExternalFile.Path()
+	resolved, err := test_resources.ExternalFile.Resolve()
+	if err != nil {
+		t.Fatalf("Failed to resolve ExternalFile: %v", err)
+	}
+
+	path := resolved.Path()
 	if path == "" {
 		t.Fatal("ExternalFile path is empty")
 	}

@@ -10,7 +10,8 @@ def go_runfile(name, target, doc = ""):
     Args:
         name: The Go variable name that will be generated to access this runfile.
             This should follow Go-idiomatic naming conventions (e.g., `ConfigJSON`,
-            `TestData`). The generated code will expose this as a public string variable.
+            `TestData`). The generated code will expose this as a public `runfile.FileSpec`
+            (or `runfile.ExecutableSpec`) variable.
         target: The Bazel target label of the runfile (e.g., `//path/to:file.json` or
             `:my_target`). This target will be automatically added to the `data`
             attribute of the underlying `go_library` to ensure it is available at runtime.
@@ -82,17 +83,21 @@ def go_runfile_library(name, importpath, entries, **kwargs):
 
     func main() {
         // 1. Accessing a regular runfile:
-        // Use .Path() to get the resolved absolute path.
-        configPath := my_runfiles.ConfigJSON.Path()
-        content, err := os.ReadFile(configPath)
+        // Resolve the file safely (returns an error if missing).
+        configFile, err := my_runfiles.ConfigJSON.Resolve()
+        if err != nil {
+            log.Fatalf("Failed to resolve config: %v", err)
+        }
+        content, err := os.ReadFile(configFile.Path())
         if err != nil {
             log.Fatalf("Failed to read config: %v", err)
         }
         fmt.Printf("Config: %s\\n", content)
 
         // 2. Running an executable runfile:
-        // Use .Cmd() to get a pre-configured *exec.Cmd with runfiles env vars.
-        cmd := my_runfiles.HelperTool.Cmd("--verbose", "run")
+        // Use MustResolve() for easy fail-fast access (panics if missing).
+        helper := my_runfiles.HelperTool.MustResolve()
+        cmd := helper.Cmd("--verbose", "run")
         cmd.Stdout = os.Stdout
         cmd.Stderr = os.Stderr
         if err := cmd.Run(); err != nil {
@@ -146,7 +151,7 @@ def go_runfile_library(name, importpath, entries, **kwargs):
         srcs = [":" + name + "_codegen"],
         importpath = importpath,
         deps = [
-            "@rules_go//go/runfiles",
+            "@rules_runfile_codegen_go//runfile",
         ] + user_deps,  # Merge deps
         data = targets + user_data,  # Merge data
         **kwargs

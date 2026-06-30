@@ -8,7 +8,7 @@ This document outlines the plan for extending `rules_runfile_codegen` to support
 
 Regardless of the target language, all implementations should adhere to our core design principles:
 1.  **Type-Safety**: Expose runfiles as strongly-typed symbols, not raw strings.
-2.  **Eager (Init-time) Resolution**: By default, resolve all runfiles at program startup/module load time and panic/throw immediately if any are missing. *(Note: This behavior may be configurable in the future, pending further design).*
+2.  **Explicit (Non-Eager) Resolution**: Evolve all language implementations towards an explicit, non-eager resolution model. Go is the first to implement this. While some languages (like Kotlin) may temporarily use eager resolution during transition, the long-term goal is to separate definition from resolution to improve testability and avoid startup side-effects.
 3.  **Rich Object Wrappers**: Distinguish between regular files (`Runfile`) and executables (`ExecutableRunfile`), providing subprocess execution helpers that automatically propagate the Bazel runfiles environment.
 4.  **Minimal Dependencies**: Package each language as a separate Bzlmod module (e.g., `rules_runfile_codegen_python`) so users only pull in what they need.
 
