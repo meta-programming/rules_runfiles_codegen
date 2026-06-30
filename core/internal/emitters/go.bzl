@@ -86,9 +86,9 @@ def emit_go(importpath, entries):
         
         escaped_path = escape_go_string(entry["runfile_path"])
         if entry["is_executable"]:
-            lines.append('\t%s = runfile.NewExecutable("%s")' % (entry["name"], escaped_path))
+            lines.append('\t%s = runfile.NewExecutableSpec("%s")' % (entry["name"], escaped_path))
         else:
-            lines.append('\t%s = runfile.New("%s")' % (entry["name"], escaped_path))
+            lines.append('\t%s = runfile.NewSpec("%s")' % (entry["name"], escaped_path))
         var_blocks.append("\n".join(lines))
     
     variables_str = "\n\n".join(var_blocks) + "\n"

@@ -10,7 +10,8 @@ def go_runfile(name, target, doc = ""):
     Args:
         name: The Go variable name that will be generated to access this runfile.
             This should follow Go-idiomatic naming conventions (e.g., `ConfigJSON`,
-            `TestData`). The generated code will expose this as a public string variable.
+            `TestData`). The generated code will expose this as a public `runfile.FileSpec`
+            (or `runfile.ExecutableSpec`) variable.
         target: The Bazel target label of the runfile (e.g., `//path/to:file.json` or
             `:my_target`). This target will be automatically added to the `data`
             attribute of the underlying `go_library` to ensure it is available at runtime.

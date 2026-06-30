@@ -24,64 +24,131 @@ func (m *mockResolver) Rlocation(path string) (string, error) {
 	return "", fmt.Errorf("runfile %q not found", path)
 }
 
-func TestResolve_Success(t *testing.T) {
-	t.Fatal("injected failure")
-	mock := &mockResolver{
-		paths: map[string]string{
-			"my_workspace/data.txt": "/absolute/path/to/data.txt",
+func TestResolve(t *testing.T) {
+	tests := []struct {
+		name      string
+		rlocation string
+		mock      *mockResolver
+		opts      []runfile.ResolveOption
+		wantPath  string
+		wantErr   string
+	}{
+		{
+			name:      "success",
+			rlocation: "my_workspace/data.txt",
+			mock: &mockResolver{
+				paths: map[string]string{
+					"my_workspace/data.txt": "/absolute/path/to/data.txt",
+				},
+			},
+			wantPath: "/absolute/path/to/data.txt",
+		},
+		{
+			name:      "resolver error",
+			rlocation: "my_workspace/missing.txt",
+			mock: &mockResolver{
+				errs: map[string]error{
+					"my_workspace/missing.txt": fmt.Errorf("permission denied"),
+				},
+			},
+			wantErr: "permission denied",
+		},
+		{
+			name:      "file not found",
+			rlocation: "my_workspace/notfound.txt",
+			mock:      &mockResolver{},
+			wantErr:   "not found",
 		},
 	}
 
-	file := runfile.New("my_workspace/data.txt")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			spec := runfile.NewSpec(tt.rlocation)
+			opts := append([]runfile.ResolveOption{runfile.WithResolver(tt.mock)}, tt.opts...)
+			file, err := spec.Resolve(opts...)
 
-	// Test Resolve with explicit resolver option
-	resolved, err := file.Resolve(runfile.WithResolver(mock))
-	if err != nil {
-		t.Fatalf("Resolve() failed: %v", err)
-	}
+			if tt.wantErr != "" {
+				if err == nil {
+					t.Fatal("Resolve() succeeded, want error")
+				}
+				if !strings.Contains(err.Error(), tt.wantErr) {
+					t.Errorf("error = %v, want it to contain %q", err, tt.wantErr)
+				}
+				return
+			}
 
-	if resolved.Rlocation() != "my_workspace/data.txt" {
-		t.Errorf("Rlocation() = %q, want %q", resolved.Rlocation(), "my_workspace/data.txt")
-	}
-	if resolved.Path() != "/absolute/path/to/data.txt" {
-		t.Errorf("Path() = %q, want %q", resolved.Path(), "/absolute/path/to/data.txt")
+			if err != nil {
+				t.Fatalf("Resolve() failed: %v", err)
+			}
+
+			if file.Rlocation() != tt.rlocation {
+				t.Errorf("Rlocation() = %q, want %q", file.Rlocation(), tt.rlocation)
+			}
+			if file.Path() != tt.wantPath {
+				t.Errorf("Path() = %q, want %q", file.Path(), tt.wantPath)
+			}
+		})
 	}
 }
 
-func TestResolve_Error(t *testing.T) {
-	mock := &mockResolver{
-		errs: map[string]error{
-			"my_workspace/missing.txt": fmt.Errorf("permission denied"),
+func TestMustResolve(t *testing.T) {
+	tests := []struct {
+		name      string
+		rlocation string
+		mock      *mockResolver
+		wantPath  string
+		wantPanic string
+	}{
+		{
+			name:      "success",
+			rlocation: "my_workspace/data.txt",
+			mock: &mockResolver{
+				paths: map[string]string{
+					"my_workspace/data.txt": "/absolute/path/to/data.txt",
+				},
+			},
+			wantPath: "/absolute/path/to/data.txt",
+		},
+		{
+			name:      "panic on error",
+			rlocation: "my_workspace/missing.txt",
+			mock: &mockResolver{
+				errs: map[string]error{
+					"my_workspace/missing.txt": fmt.Errorf("file missing"),
+				},
+			},
+			wantPanic: "file missing",
 		},
 	}
 
-	file := runfile.New("my_workspace/missing.txt")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			spec := runfile.NewSpec(tt.rlocation)
 
-	_, err := file.Resolve(runfile.WithResolver(mock))
-	if err == nil {
-		t.Fatal("Resolve() succeeded, want error")
+			if tt.wantPanic != "" {
+				defer func() {
+					r := recover()
+					if r == nil {
+						t.Fatal("MustResolve() did not panic")
+					}
+					err, ok := r.(error)
+					if !ok {
+						t.Fatalf("panic value is not an error: %v", r)
+					}
+					if !strings.Contains(err.Error(), tt.wantPanic) {
+						t.Errorf("panic = %v, want it to contain %q", err, tt.wantPanic)
+					}
+				}()
+			}
+
+			file := spec.MustResolve(runfile.WithResolver(tt.mock))
+			if tt.wantPanic == "" {
+				if file.Path() != tt.wantPath {
+					t.Errorf("Path() = %q, want %q", file.Path(), tt.wantPath)
+				}
+			}
+		})
 	}
-	if !strings.Contains(err.Error(), "permission denied") {
-		t.Errorf("error = %v, want it to contain 'permission denied'", err)
-	}
-}
-
-func TestMustResolve_Panic(t *testing.T) {
-	mock := &mockResolver{
-		errs: map[string]error{
-			"my_workspace/missing.txt": fmt.Errorf("file missing"),
-		},
-	}
-
-	file := runfile.New("my_workspace/missing.txt")
-
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("MustResolve() did not panic")
-		}
-	}()
-
-	file.MustResolve(runfile.WithResolver(mock))
 }
 
 func TestDefaultResolver(t *testing.T) {
@@ -94,15 +161,14 @@ func TestDefaultResolver(t *testing.T) {
 	// Set the default resolver
 	runfile.SetDefaultResolver(mock)
 
-	file := runfile.New("my_workspace/data.txt")
+	spec := runfile.NewSpec("my_workspace/data.txt")
 
-	// Resolve without passing WithResolver option
-	resolved, err := file.Resolve()
+	file, err := spec.Resolve()
 	if err != nil {
 		t.Fatalf("Resolve() failed: %v", err)
 	}
 
-	if resolved.Path() != "/default/path/to/data.txt" {
-		t.Errorf("Path() = %q, want %q", resolved.Path(), "/default/path/to/data.txt")
+	if file.Path() != "/default/path/to/data.txt" {
+		t.Errorf("Path() = %q, want %q", file.Path(), "/default/path/to/data.txt")
 	}
 }

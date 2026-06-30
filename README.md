@@ -163,11 +163,11 @@ import (
 var (
 	// DataFile is A dummy data file.
 	// Source: @@//:data/dummy.txt
-	DataFile = runfile.New("_main/data/dummy.txt")
+	DataFile = runfile.NewSpec("_main/data/dummy.txt")
 
 	// HelperTool is A helper tool executable.
 	// Source: @@//:helper
-	HelperTool = runfile.NewExecutable("_main/helper_/helper")
+	HelperTool = runfile.NewExecutableSpec("_main/helper_/helper")
 
 )
 ```

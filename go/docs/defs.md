@@ -23,7 +23,7 @@ dependency. It is intended to be passed in the `entries` list of `go_runfile_lib
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="go_runfile-name"></a>name |  The Go variable name that will be generated to access this runfile. This should follow Go-idiomatic naming conventions (e.g., `ConfigJSON`, `TestData`). The generated code will expose this as a public string variable.   |  none |
+| <a id="go_runfile-name"></a>name |  The Go variable name that will be generated to access this runfile. This should follow Go-idiomatic naming conventions (e.g., `ConfigJSON`, `TestData`). The generated code will expose this as a public `runfile.FileSpec` (or `runfile.ExecutableSpec`) variable.   |  none |
 | <a id="go_runfile-target"></a>target |  The Bazel target label of the runfile (e.g., `//path/to:file.json` or `:my_target`). This target will be automatically added to the `data` attribute of the underlying `go_library` to ensure it is available at runtime.   |  none |
 | <a id="go_runfile-doc"></a>doc |  A descriptive comment for the generated Go variable. This will be included as a Go docstring on the generated variable, providing context for developers using the generated library.   |  `""` |
 
