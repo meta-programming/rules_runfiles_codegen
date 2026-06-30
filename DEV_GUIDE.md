@@ -79,21 +79,27 @@ To run the tool, use the wrapper script from the repository root:
 tools/devtool [command]
 ```
 
-### Updating the Documentation (README.md)
+### Updating the Documentation
 
-The **[README.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/README.md)** contains sections showing the "Actual Generated Code" for both Go and Kotlin. To ensure these snippets are 100% accurate and compiler-verified, they are automatically synchronized from the integration test outputs.
+The **[README.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/README.md)** contains sections showing the "Actual Generated Code" for both Go and Kotlin. To ensure these snippets are 100% accurate and compiler-verified, they are automatically synchronized from the integration test outputs. The Stardoc documentation is also synchronized from the generated output.
 
-If you make changes to the code generators, you should update the README before committing.
+If you make changes to the code generators or docstrings, you should update the documentation before committing.
 
-Run the update-readme command from the repository root:
+Run the update-docs command from the repository root:
 ```bash
-tools/devtool update-readme
+tools/devtool update-docs
 ```
-This will automatically build the examples for all languages to generate the latest outputs, read them, and inject them into the README.
+This will automatically build the examples and stardoc targets for all languages to generate the latest outputs, read them, and inject them into the README and docs directories.
 
 If you want to skip the build step (e.g., if you already built them and want it to run faster), you can pass the `--build=false` flag:
 ```bash
-tools/devtool update-readme --build=false
+tools/devtool update-docs --build=false
+```
+
+You can also selectively update only the README or only Stardoc:
+```bash
+tools/devtool update-docs --readme=false  # Only update stardoc
+tools/devtool update-docs --stardoc=false # Only update README
 ```
 
 ### Managing Module Versions
