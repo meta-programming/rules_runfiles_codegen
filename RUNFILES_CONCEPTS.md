@@ -1,6 +1,6 @@
 # Bazel Runfiles Concepts and Semantics
 
-This document defines the core concepts, physical layout, and resolution semantics of Bazel **runfiles** (data-dependencies). It serves as an authoritative reference for developers working with Bazel runfiles libraries, particularly during the transition from the legacy `WORKSPACE` system to modern `Bzlmod` repository mapping.
+This document defines the core concepts, physical layout, and resolution semantics of Bazel **runfiles** (data-dependencies). This is a clarifying document for developers in this repository. It attempts to write up relevant Bazel runfiles concepts as they are used in this project.
 
 ---
 
