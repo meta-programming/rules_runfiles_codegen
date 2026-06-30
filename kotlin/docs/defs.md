@@ -58,24 +58,24 @@ In your `Main.kt`:
 package com.example.project
 
 import com.example.project.runfiles.MyRunfiles
-import java.io.File
+import kotlin.io.path.readText
 
-func main() {
+fun main() {
     // 1. Accessing a regular runfile:
-    // Use .path to get the resolved absolute path as a String.
-    val configPath = MyRunfiles.configJson.path
-    val content = File(configPath).readText()
+    // Resolve the spec and read its content directly using Path.readText().
+    val content = MyRunfiles.configJson.resolve().path.readText()
     println("Content: $content")
 
-    // Or use .jvmPath to get it as a java.nio.file.Path
-    val configJvmPath = MyRunfiles.configJson.jvmPath
+    // The resolved path is a java.nio.file.Path
+    val path = MyRunfiles.configJson.resolve().path
 
     // 2. Running an executable runfile:
-    // Use .processBuilder() to get a pre-configured ProcessBuilder with runfiles env vars.
-    val pb = MyRunfiles.helperTool.processBuilder("--verbose", "run")
-    pb.inheritIO()
-    val process = pb.start()
-    val exitCode = process.waitFor()
+    // Resolve, configure, start, and wait for the process in a fluent chain.
+    val exitCode = MyRunfiles.helperTool.resolve()
+        .processBuilder("--verbose", "run")
+        .inheritIO()
+        .start()
+        .waitFor()
     if (exitCode != 0) {
         error("Helper tool failed with exit code $exitCode")
     }

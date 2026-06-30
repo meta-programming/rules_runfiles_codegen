@@ -1,21 +1,20 @@
 package com.example.project.tests
 
 import com.example.project.tests.resources.TestResources
-import java.io.File
-import java.nio.file.Files
+import kotlin.io.path.readText
 
 fun main() {
     // Assertions
-    val configPath = TestResources.configJson.path
-    println("Config path: $configPath")
-    val configContent = File(configPath).readText().trim()
+    val configFile = TestResources.configJson.resolve()
+    println("Config path: ${configFile.path}")
+    val configContent = configFile.path.readText().trim()
     if (configContent != "dummy content") {
         throw RuntimeException("Config content mismatch: got '$configContent', want 'dummy content'")
     }
 
-    val schemaPath = TestResources.externalFile.jvmPath
-    println("Schema path: $schemaPath")
-    val schemaContent = Files.readString(schemaPath).trim()
+    val externalFile = TestResources.externalFile.resolve()
+    println("Schema path: ${externalFile.path}")
+    val schemaContent = externalFile.path.readText().trim()
     if (schemaContent.isEmpty()) {
         throw RuntimeException("External file is empty")
     }
@@ -26,7 +25,8 @@ fun main() {
     }
 
     // Executable test
-    val process = TestResources.helperTool.processBuilder().start()
+    val helper = TestResources.helperTool.resolve()
+    val process = helper.processBuilder().start()
     val stdout = process.inputStream.bufferedReader().readText().trim()
     val stderr = process.errorStream.bufferedReader().readText().trim()
     val exitCode = process.waitFor()

@@ -269,23 +269,39 @@ Here is the actual example:
 package com.example.project.examples
 
 import com.example.project.examples.resources.Resources
-import java.io.File
+import kotlin.io.path.readText
 
 fun main() {
     // 1. Access the resolved runfile path.
-    // Resources are resolved at startup (init-time).
-    val path = Resources.configJson.path
-    val content = File(path).readText().trim()
+    // Resolve the spec and read its content directly using Path.readText().
+    val content = Resources.configJson.resolve().path.readText().trim()
     println("Data: $content")
 
     // 2. Run an executable runfile with env propagation.
-    val process = Resources.helperTool.processBuilder().start()
-    val output = process.inputStream.bufferedReader().readText().trim()
-    process.waitFor()
+    val process = Resources.helperTool.resolve().processBuilder().start()
+    val output = process.inputStream.reader().use { it.readText() }.trim()
+    val exitCode = process.waitFor()
+    if (exitCode != 0) {
+        error("Helper tool failed with exit code $exitCode")
+    }
     println("Helper output: $output")
 }
 ```
 <!-- KOTLIN_USAGE_END -->
+
+### Coroutines & Blocking I/O
+
+The `resolve()` method and subsequent file/process operations (like `readText()` or `process.waitFor()`) are **blocking I/O operations**. If you are using this library inside a coroutine-based application (such as Ktor, Spring WebFlux, or Android), you should offload these calls to `Dispatchers.IO` to avoid blocking event loops or the main thread:
+
+```kotlin
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlin.io.path.readText
+
+suspend fun loadConfig(): String = withContext(Dispatchers.IO) {
+    Resources.configJson.resolve().path.readText()
+}
+```
 
 ### Actual Generated Kotlin Code
 
@@ -298,51 +314,22 @@ fun main() {
 // This file provides type-safe access to Bazel runfiles.
 package com.example.project.examples.resources
 
-import com.google.devtools.build.runfiles.Runfiles
+import com.github.metaprogramming.runfiles.FileSpec
+import com.github.metaprogramming.runfiles.ExecutableSpec
+import com.github.metaprogramming.runfiles.RlocationPath
 
 object Resources {
-    private val _runfiles: Runfiles = try {
-        Runfiles.create()
-    } catch (e: java.io.IOException) {
-        throw java.lang.RuntimeException("Failed to create runfiles registry", e)
-    }
-
-    open class Runfile(val path: String) {
-        val jvmPath: java.nio.file.Path by lazy { java.nio.file.Paths.get(path) }
-    }
-
-    class ExecutableRunfile(path: String) : Runfile(path) {
-        fun processBuilder(vararg args: String): ProcessBuilder {
-            val pb = ProcessBuilder(path, *args)
-            pb.environment().putAll(Resources._runfiles.envVars)
-            return pb
-        }
-    }
-
-    private fun _mustResolve(rlocationPath: String): Runfile {
-        val absPath = _runfiles.rlocation(rlocationPath)
-            ?: throw java.lang.RuntimeException("Failed to resolve runfile: $rlocationPath")
-        return Runfile(absPath)
-    }
-
-    private fun _mustResolveExecutable(rlocationPath: String): ExecutableRunfile {
-        val absPath = _runfiles.rlocation(rlocationPath)
-            ?: throw java.lang.RuntimeException("Failed to resolve executable runfile: $rlocationPath")
-        return ExecutableRunfile(absPath)
-    }
-
     /**
      * A dummy data file.
      * Source: @@//:data/dummy.txt
      */
-    val configJson: Runfile = _mustResolve("_main/data/dummy.txt")
+    val configJson = FileSpec(RlocationPath("_main/data/dummy.txt"))
 
     /**
      * A helper tool executable.
      * Source: @@//:helper
      */
-    val helperTool: ExecutableRunfile = _mustResolveExecutable("_main/helper")
-
+    val helperTool = ExecutableSpec(RlocationPath("_main/helper"))
 }
 ```
 <!-- GENERATED_KOTLIN_END -->

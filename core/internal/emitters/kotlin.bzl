@@ -8,7 +8,9 @@ def _kotlin_header_part(package):
 // This file provides type-safe access to Bazel runfiles.
 package {{package}}
 
-import com.google.devtools.build.runfiles.Runfiles""",
+import com.github.metaprogramming.runfiles.FileSpec
+import com.github.metaprogramming.runfiles.ExecutableSpec
+import com.github.metaprogramming.runfiles.RlocationPath""",
         package = package,
     )
 
@@ -16,49 +18,10 @@ def _kotlin_object_template(object_name, members_str):
     return render(
         """object {{object_name}} {
 {{members}}
-
 }""",
         object_name = object_name,
         members = members_str,
     )
-
-def _kotlin_runfiles_field():
-    return """    private val _runfiles: Runfiles = try {
-        Runfiles.create()
-    } catch (e: java.io.IOException) {
-        throw java.lang.RuntimeException("Failed to create runfiles registry", e)
-    }"""
-
-def _kotlin_runfile_class():
-    return """    open class Runfile(val path: String) {
-        val jvmPath: java.nio.file.Path by lazy { java.nio.file.Paths.get(path) }
-    }"""
-
-def _kotlin_executable_class(object_name):
-    return render(
-        """    class ExecutableRunfile(path: String) : Runfile(path) {
-        fun processBuilder(vararg args: String): ProcessBuilder {
-            val pb = ProcessBuilder(path, *args)
-            pb.environment().putAll({{object_name}}._runfiles.envVars)
-            return pb
-        }
-    }""",
-        object_name = object_name,
-    )
-
-def _kotlin_resolve_helper():
-    return """    private fun _mustResolve(rlocationPath: String): Runfile {
-        val absPath = _runfiles.rlocation(rlocationPath)
-            ?: throw java.lang.RuntimeException("Failed to resolve runfile: $rlocationPath")
-        return Runfile(absPath)
-    }"""
-
-def _kotlin_resolve_executable_helper():
-    return """    private fun _mustResolveExecutable(rlocationPath: String): ExecutableRunfile {
-        val absPath = _runfiles.rlocation(rlocationPath)
-            ?: throw java.lang.RuntimeException("Failed to resolve executable runfile: $rlocationPath")
-        return ExecutableRunfile(absPath)
-    }"""
 
 _KOTLIN_KEYWORDS = [
     "as", "as?", "break", "class", "continue", "do", "else", "false", "for",
@@ -67,8 +30,6 @@ _KOTLIN_KEYWORDS = [
     "var", "when", "while", "interface", "import"
 ]
 
-_KOTLIN_RESERVED_NAMES = ["Runfile", "ExecutableRunfile", "_runfiles", "_mustResolve", "_mustResolveExecutable"]
-
 def _validate_identifier(name, label, is_object = False):
     """Validates that a string is a valid Kotlin identifier."""
     if not name:
@@ -76,10 +37,7 @@ def _validate_identifier(name, label, is_object = False):
     if name in _KOTLIN_KEYWORDS:
         fail("Identifier '%s' in '%s' is a Kotlin keyword and cannot be used." % (name, label))
     
-    if not is_object:
-        if name in _KOTLIN_RESERVED_NAMES:
-            fail("Runfile name '%s' in '%s' is reserved in Kotlin and cannot be used." % (name, label))
-
+    # We no longer have reserved names to check against, but we still validate format.
     first_char = name[0]
     if not (first_char.isalpha() or first_char == '_'):
         fail("Identifier '%s' in '%s' must start with a letter or underscore for Kotlin." % (name, label))
@@ -119,15 +77,8 @@ def emit_kotlin(package, entries, object_name, rule_label):
     # 1. Header
     header = _kotlin_header_part(package)
 
-    # 2. Members of the object
+    # 2. Properties
     members = []
-    members.append(_kotlin_runfiles_field())
-    members.append(_kotlin_runfile_class())
-    members.append(_kotlin_executable_class(object_name))
-    members.append(_kotlin_resolve_helper())
-    members.append(_kotlin_resolve_executable_helper())
-
-    # 3. Properties
     for entry in entries:
         # Validate Kotlin identifier
         _validate_identifier(entry["name"], entry["label"])
@@ -147,15 +98,15 @@ def emit_kotlin(package, entries, object_name, rule_label):
         escaped_path = escape_kotlin_string(entry["runfile_path"])
         
         if entry["is_executable"]:
-            lines.append('    val %s: ExecutableRunfile = _mustResolveExecutable("%s")' % (entry["name"], escaped_path))
+            lines.append('    val %s = ExecutableSpec(RlocationPath("%s"))' % (entry["name"], escaped_path))
         else:
-            lines.append('    val %s: Runfile = _mustResolve("%s")' % (entry["name"], escaped_path))
+            lines.append('    val %s = FileSpec(RlocationPath("%s"))' % (entry["name"], escaped_path))
         members.append("\n".join(lines))
 
     # Join all members with double newlines
     members_str = "\n\n".join(members)
 
-    # 4. Assemble Object
+    # 3. Assemble Object
     object_block = _kotlin_object_template(object_name, members_str)
 
     return header + "\n\n" + object_block + "\n"
