@@ -27,7 +27,7 @@ func (m *mockResolver) Rlocation(path string) (string, error) {
 func TestResolve(t *testing.T) {
 	tests := []struct {
 		name      string
-		rlocation string
+		rlocation runfile.RlocationPath
 		mock      *mockResolver
 		opts      []runfile.ResolveOption
 		wantPath  string
@@ -94,7 +94,7 @@ func TestResolve(t *testing.T) {
 func TestMustResolve(t *testing.T) {
 	tests := []struct {
 		name      string
-		rlocation string
+		rlocation runfile.RlocationPath
 		mock      *mockResolver
 		wantPath  string
 		wantPanic string

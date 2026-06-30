@@ -15,8 +15,45 @@ import (
 	"github.com/bazelbuild/rules_go/go/runfiles"
 )
 
+// RlocationPath represents a logical, runfiles-root-relative path used to
+// locate a data dependency (runfile) at runtime.
+//
+// This path serves as the key for lookups in the runfiles manifest or symlink tree.
+// Depending on how it is constructed, an RlocationPath can be in one of two formats:
+//
+//   - **Apparent Path**: Starts with an apparent repository name (e.g., "rules_go/path/to/file").
+//     This is the "nickname" of the repository as seen by the caller. It is common
+//     in hand-written code, is context-dependent, and is resolved at runtime using
+//     the calling repository's [apparent repository mapping](https://bazel.build/external/overview#apparent-repo-name).
+//
+//   - **Canonical Path**: Starts with a canonical repository name (e.g., "rules_go~~go~0.39.0/path/to/file"
+//     or "_main/path/to/file"). This is globally unique within the runfiles tree and
+//     does not require runtime mapping. This format is typically returned by the
+//     [$(rlocationpath ...)](https://bazel.build/extending/rules#runfiles) helper in BUILD files.
+//
+// ### The Special "_main" Repository
+// Under Bzlmod, the main repository (your project) is always assigned the fixed
+// canonical name "_main" in the runfiles directory, decoupling it from any legacy
+// workspace names defined in WORKSPACE files. Consequently, canonical paths to
+// your own project's runfiles will start with "_main/" (e.g., "_main/path/to/file").
+// See the [Bazel Bzlmod Migration Guide](https://bazel.build/external/migration) for details.
+//
+// For a detailed explanation of these concepts, see RUNFILES_CONCEPTS.md in this
+// repository, or refer to the official Bazel documentation:
+//   - [Bazel Runfiles Location](https://bazel.build/extending/rules#runfiles_location)
+//   - [Bazel Apparent Repository Name](https://bazel.build/external/overview#apparent-repo-name)
+type RlocationPath string
+
+// String returns the path as a plain string.
+func (p RlocationPath) String() string {
+	return string(p)
+}
+
 // Resolver defines the interface for looking up runfiles.
 // It is satisfied by the concrete [*runfiles.Runfiles] struct from rules_go.
+//
+// Note: This interface uses plain string for the path to remain compatible
+// with [*runfiles.Runfiles.Rlocation] without requiring a wrapper.
 type Resolver interface {
 	Rlocation(path string) (string, error)
 }
@@ -70,39 +107,20 @@ func WithResolver(resolver Resolver) ResolveOption {
 // FileSpec represents an unresolved runfile specification.
 // It holds the logical rlocation path but has not yet been located on disk.
 type FileSpec struct {
-	rlocation string
+	rlocation RlocationPath
 }
 
 // NewSpec creates a new unresolved [FileSpec] reference.
 //
-// The rlocationpath argument must be a runfiles-root-relative path (rlocation path).
-//
-// Depending on how this path is constructed, it can be:
-//   - **Apparent**: Starts with an apparent repository name (e.g., "rules_go/path/to/file").
-//     This is common when hand-writing paths in code. It is context-dependent and
-//     resolved at runtime using the caller's repository mapping.
-//   - **Canonical**: Starts with a canonical repository name (e.g., "rules_go~~go~0.39.0/path/to/file"
-//     or "_main/path/to/file"). This is typically returned by the `$(rlocationpath ...)`
-//     helper in BUILD files. It is globally unique within the runfiles tree and
-//     does not require runtime mapping. Note that under Bzlmod, the main repository
-//     is always assigned the fixed canonical name "_main" to decouple it from legacy
-//     workspace names (see [Bazel Bzlmod Migration](https://bazel.build/external/migration)).
-//
-// For a detailed explanation of these concepts, see RUNFILES_CONCEPTS.md in this
-// repository, or refer to the official Bazel documentation:
-//   - [Bazel Runfiles Location](https://bazel.build/extending/rules#runfiles_location)
-//   - [Bazel Apparent Repo Name](https://bazel.build/external/overview#apparent-repo-name)
-func NewSpec(rlocationpath string) FileSpec {
+// See [RlocationPath] for details on the expected path formats.
+func NewSpec(rlocationpath RlocationPath) FileSpec {
 	return FileSpec{rlocation: rlocationpath}
 }
 
-// RlocationPath returns the logical, runfiles-root-relative path of the runfile
-// (e.g., "my_project/data/config.json" or "my_dep~1.0/data/config.json").
+// RlocationPath returns the logical, runfiles-root-relative path of the runfile.
 //
-// This path can be either apparent or canonical, depending on how the spec was created.
-// It serves as the key used to look up the runfile in the runfiles manifest or directory.
-// For details on how Bazel structures these paths, see the [Bazel Runfiles Guide](https://bazel.build/extending/rules#runfiles).
-func (fs FileSpec) RlocationPath() string {
+// See [RlocationPath] for details on the path formats.
+func (fs FileSpec) RlocationPath() RlocationPath {
 	return fs.rlocation
 }
 
@@ -127,7 +145,7 @@ func (fs FileSpec) Resolve(opts ...ResolveOption) (File, error) {
 		}
 	}
 
-	path, err := resolver.Rlocation(fs.rlocation)
+	path, err := resolver.Rlocation(string(fs.rlocation))
 	if err != nil {
 		return File{}, fmt.Errorf("failed to resolve runfile %q: %w", fs.rlocation, err)
 	}
@@ -150,8 +168,9 @@ type ExecutableSpec struct {
 }
 
 // NewExecutableSpec creates a new unresolved [ExecutableSpec] reference.
-// See [NewSpec] for details on the rlocation argument format.
-func NewExecutableSpec(rlocation string) ExecutableSpec {
+//
+// See [RlocationPath] for details on the expected path formats.
+func NewExecutableSpec(rlocation RlocationPath) ExecutableSpec {
 	return ExecutableSpec{FileSpec: NewSpec(rlocation)}
 }
 
@@ -181,17 +200,14 @@ func (es ExecutableSpec) MustResolve(opts ...ResolveOption) Executable {
 // File represents a runfile that has been successfully located on disk (via [FileSpec.Resolve]).
 // Its methods are guaranteed not to fail.
 type File struct {
-	rlocation string
+	rlocation RlocationPath
 	absPath   string
 }
 
-// RlocationPath returns the logical, runfiles-root-relative path of the runfile
-// (e.g., "my_project/data/config.json" or "my_dep~1.0/data/config.json").
+// RlocationPath returns the logical, runfiles-root-relative path of the runfile.
 //
-// This path can be either apparent or canonical, depending on how the spec was resolved.
-// It serves as the key used to look up the runfile in the runfiles manifest or directory.
-// For details on how Bazel structures these paths, see the [Bazel Runfiles Guide](https://bazel.build/extending/rules#runfiles).
-func (f File) RlocationPath() string {
+// See [RlocationPath] for details on the path formats.
+func (f File) RlocationPath() RlocationPath {
 	return f.rlocation
 }
 
