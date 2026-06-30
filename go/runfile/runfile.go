@@ -42,6 +42,10 @@ import (
 // repository, or refer to the official Bazel documentation:
 //   - [Bazel Runfiles Location](https://bazel.build/extending/rules#runfiles_location)
 //   - [Bazel Apparent Repository Name](https://bazel.build/external/overview#apparent-repo-name)
+//
+// (Note: The spelling "RlocationPath" uses a lowercase "l" to treat "rlocation" as a single
+// coined word—similar to "email"—and to maintain consistency with the underlying
+// rules_go package's Rlocation method.)
 type RlocationPath string
 
 // String returns the path as a plain string.
