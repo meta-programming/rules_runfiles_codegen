@@ -57,6 +57,6 @@ jobs:
       tag_name: ${{ github.event.release.tag_name || inputs.tag_name }}
       registry_fork: gonzojive/bazel-central-registry
       open_pull_request: false
-      attest: true
+      attest: false
     secrets:
       publish_token: ${{ secrets.BCR_PUBLISH_TOKEN }}
