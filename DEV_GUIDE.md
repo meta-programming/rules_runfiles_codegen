@@ -115,6 +115,61 @@ During a release, all three released modules (`core`, `go`, `kotlin`) must share
 
 ---
 
+## Adding Support for a New Language
+
+To add support for a new language (e.g., Python, C++), you must follow the multi-module structure established in this project. Each language is published as a separate Bazel module to keep dependencies minimal for users.
+
+Follow these steps to implement and integrate a new language:
+
+### 1. Implement the Rules and Generator
+
+1.  **Create the module directory**: Create a new directory at the root (e.g., `repo/python/`).
+2.  **Define the Starlark API**: In `repo/<lang>/defs.bzl`, define the public macros. Follow the established naming convention:
+    *   `<lang_prefix>_runfile_library`: The main macro users will call. It should generate a library target in the target language.
+    *   It should accept a list of runfiles (data dependencies) and generate a library that exposes them as symbolic names.
+3.  **Implement the generator**: Write the code generator (typically in Go, located in `repo/<lang>/generator/`). This generator should read the runfiles metadata and output the source code.
+4.  **Create the MODULE.bazel**: Define the module in `repo/<lang>/MODULE.bazel`. It must depend on `rules_runfile_codegen_core`.
+
+### 2. Create an Example Workspace
+
+Create a standalone Bazel workspace in `repo/examples/<lang>/` to demonstrate usage and provide source material for the documentation.
+
+1.  **Configure Bzlmod**: Use `local_path_override` in `examples/<lang>/MODULE.bazel` to point to your local `<lang>/` and `core/` modules (see the local development setup section above).
+2.  **Create a usage example**: Write a simple program that uses the generated library.
+3.  **Annotate the BUILD.bazel**: In `examples/<lang>/BUILD.bazel`, wrap the quickstart target definition in `# [START quickstart]` and `# [END quickstart]` comments. The devtool uses these markers to extract the snippet.
+4.  **Verify the build**: Ensure that running `bazel build //...` in the example directory succeeds and generates the expected output in `bazel-bin/`.
+
+### 3. Integrate with the Developer Tool (devtool)
+
+To enable automatic documentation updates and version management, you must register the new language with the devtool:
+
+1.  **Register the language**: Open [tools/cmd/devtool/languages.go](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/tools/cmd/devtool/languages.go) and add a new `LanguageConfig` entry to the `languages` slice.
+2.  **Add README placeholders**: Open [README.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/README.md) and add the following HTML comment markers in the appropriate sections:
+    *   `<!-- <LANG>_INSTALL_START -->` / `<!-- <LANG>_INSTALL_END -->` (for the `MODULE.bazel` dependency snippet)
+    *   `<!-- <LANG>_BUILD_START -->` / `<!-- <LANG>_BUILD_END -->` (for the `BUILD.bazel` quickstart snippet)
+    *   `<!-- <LANG>_USAGE_START -->` / `<!-- <LANG>_USAGE_END -->` (for the example usage code)
+    *   `<!-- GENERATED_<LANG>_START -->` / `<!-- GENERATED_<LANG>_END -->` (for the actual generated code output)
+    *   *(Replace `<LANG>` with the uppercase name of the language, e.g., `PYTHON`).*
+3.  **Sync the README**: Run `tools/devtool update-readme` from the repository root to verify that the devtool automatically builds your example and injects the code into the README.
+
+### 4. Create Integration Tests
+
+Create a standalone test workspace in `repo/tests/<lang>/` to run integration tests.
+
+1.  **Configure Bzlmod**: Like the example workspace, use `local_path_override` to point to the local modules.
+2.  **Write tests**: Implement tests that verify the generated code compiles, runs, and correctly resolves runfiles at runtime.
+3.  **Verify**: Ensure `bazel test //...` passes in the test directory.
+
+### 5. Add BCR Release Metadata
+
+Since each language module is published separately to the Bazel Central Registry (BCR), you must set up the release metadata:
+
+1.  **Create BCR metadata**: In `repo/.bcr/modules/`, create a new directory `rules_runfile_codegen_<lang>/`.
+2.  **Add configuration**: Create `metadata.json` and `presubmit.yml` in that directory, following the pattern of the existing modules.
+3.  **Update release workflow**: If necessary, update the GitHub Actions release workflow in `.github/workflows/release.yml` to include the new module in the release process.
+
+---
+
 ## Project Structure Reference
 
 For details on the architecture, code generation design, and path resolution logic, see **[DESIGN.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/DESIGN.md)**.
