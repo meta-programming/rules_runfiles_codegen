@@ -3,13 +3,17 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
 )
 
+var buildExamples bool
+
 func init() {
+	updateReadmeCmd.Flags().BoolVar(&buildExamples, "build", true, "Build the examples before updating the README")
 	rootCmd.AddCommand(updateReadmeCmd)
 }
 
@@ -71,6 +75,17 @@ func runUpdateReadme() error {
 	}
 
 	for _, lang := range languages {
+		if buildExamples {
+			fmt.Printf("Building examples for %s...\n", lang.ID)
+			cmd := exec.Command("bazel", "build", "//...")
+			cmd.Dir = filepath.Join(resolvedRoot, "examples", lang.ID)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return fmt.Errorf("failed to build examples for %s: %w", lang.ID, err)
+			}
+		}
+
 		buildPath := filepath.Join(resolvedRoot, "examples", lang.ID, "BUILD.bazel")
 		usagePath := filepath.Join(resolvedRoot, "examples", lang.ID, lang.UsageFile)
 		genPath := filepath.Join(resolvedRoot, "examples", lang.ID, lang.GenFile)

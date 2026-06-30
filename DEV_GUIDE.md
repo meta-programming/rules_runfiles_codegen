@@ -83,19 +83,18 @@ tools/devtool [command]
 
 The **[README.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/README.md)** contains sections showing the "Actual Generated Code" for both Go and Kotlin. To ensure these snippets are 100% accurate and compiler-verified, they are automatically synchronized from the integration test outputs.
 
-If you make changes to the code generators, you should update the README before committing:
+If you make changes to the code generators, you should update the README before committing.
 
-1.  **Generate the latest outputs** by building the examples (this ensures the generated files exist in the `bazel-bin` directories):
-    ```bash
-    # From the repo root:
-    (cd examples/go && bazel build //...)
-    (cd examples/kotlin && bazel build //...)
-    ```
-2.  **Run the update-readme command**:
-    ```bash
-    tools/devtool update-readme
-    ```
-    This will automatically detect the repository root, read the generated files, and inject them into the README.
+Run the update-readme command from the repository root:
+```bash
+tools/devtool update-readme
+```
+This will automatically build the examples for all languages to generate the latest outputs, read them, and inject them into the README.
+
+If you want to skip the build step (e.g., if you already built them and want it to run faster), you can pass the `--build=false` flag:
+```bash
+tools/devtool update-readme --build=false
+```
 
 ### Managing Module Versions
 
