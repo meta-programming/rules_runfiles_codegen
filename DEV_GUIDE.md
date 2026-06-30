@@ -70,24 +70,49 @@ bazel test //...
 
 ---
 
-## Updating the Documentation (README.md)
+## Developer Tools (`runfilesdevtool`)
+
+The project includes a unified developer tool to assist with common tasks like updating documentation and managing module versions. A wrapper script is provided at `tools/devtool` so you can run it easily from anywhere in the repository.
+
+To run the tool, use the wrapper script from the repository root:
+```bash
+tools/devtool [command]
+```
+
+### Updating the Documentation (README.md)
 
 The **[README.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/README.md)** contains sections showing the "Actual Generated Code" for both Go and Kotlin. To ensure these snippets are 100% accurate and compiler-verified, they are automatically synchronized from the integration test outputs.
 
 If you make changes to the code generators, you should update the README before committing:
 
-1.  **Generate the latest outputs** by running the integration tests (this ensures the generated files exist in the `bazel-bin` directories):
+1.  **Generate the latest outputs** by building the examples (this ensures the generated files exist in the `bazel-bin` directories):
     ```bash
     # From the repo root:
-    (cd tests/go && bazel build //...)
-    (cd tests/kotlin && bazel build //...)
+    (cd examples/go && bazel build //...)
+    (cd examples/kotlin && bazel build //...)
     ```
-2.  **Run the synchronization script** from the repository root:
+2.  **Run the update-readme command**:
     ```bash
-    go run tools/update_readme.go
+    tools/devtool update-readme
     ```
-    This script will read the generated files from the `bazel-bin` directories and inject them into the README between the `<!-- GENERATED_..._START -->` and `<!-- GENERATED_..._END -->` markers.
-3.  **Commit the updated README.md**.
+    This will automatically detect the repository root, read the generated files, and inject them into the README.
+
+### Managing Module Versions
+
+During a release, all three released modules (`core`, `go`, `kotlin`) must share the exact same version.
+
+*   **Check version consistency**:
+    ```bash
+    tools/devtool version check
+    ```
+    This verifies that all `MODULE.bazel` files have matching versions.
+*   **Set a new version**:
+    ```bash
+    tools/devtool version set 0.2.0
+    ```
+    This uses the official Bazel AST parser to safely update the version in all `MODULE.bazel` files at once, preserving formatting and comments.
+
+
 
 ---
 

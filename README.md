@@ -25,10 +25,12 @@ For complete, runnable projects demonstrating these quickstarts, see the [exampl
 
 To use these rules in your Go project, add the following to your `MODULE.bazel` file:
 
+<!-- GO_INSTALL_START -->
 ```bazel
 # MODULE.bazel
 bazel_dep(name = "rules_runfile_codegen_go", version = "0.1.0")
 ```
+<!-- GO_INSTALL_END -->
 
 > [!NOTE]
 > **Pre-release Usage (Local Overrides)**:
@@ -230,10 +232,12 @@ func mustResolveExecutable(reg *runfiles.Runfiles, rlocationPath string) Executa
 
 To use these rules in your Kotlin project, add the following to your `MODULE.bazel` file:
 
+<!-- KOTLIN_INSTALL_START -->
 ```bazel
 # MODULE.bazel
 bazel_dep(name = "rules_runfile_codegen_kotlin", version = "0.1.0")
 ```
+<!-- KOTLIN_INSTALL_END -->
 
 > [!NOTE]
 > **Pre-release Usage (Local Overrides)**:
