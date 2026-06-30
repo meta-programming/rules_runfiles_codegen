@@ -1,5 +1,5 @@
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
-load("//internal:emitters/template.bzl", "render")
+load("//internal/emitters:template.bzl", "render")
 
 def _render_test_impl(ctx):
     env = unittest.begin(ctx)

@@ -109,6 +109,26 @@ module(
 			newVersion: "1.0.0",
 			wantErr:    true,
 		},
+		{
+			name: "update bazel_dep versions",
+			content: `module(
+    name = "my_module",
+    version = "1.2.3",
+)
+
+bazel_dep(name = "rules_runfile_codegen_core", version = "1.2.3")
+bazel_dep(name = "other_dep", version = "1.2.3")
+`,
+			newVersion: "2.0.0",
+			want: `module(
+    name = "my_module",
+    version = "2.0.0",
+)
+
+bazel_dep(name = "rules_runfile_codegen_core", version = "2.0.0")
+bazel_dep(name = "other_dep", version = "1.2.3")
+`,
+		},
 	}
 
 	for _, tt := range tests {

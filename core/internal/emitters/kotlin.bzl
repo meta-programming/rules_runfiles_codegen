@@ -1,6 +1,6 @@
 # Kotlin code emitter for rules_runfile_codegen.
-load("//internal:emitters/template.bzl", "render")
-load("//internal:emitters/utils.bzl", "escape_kotlin_string", "sanitize_kdoc")
+load("//internal/emitters:template.bzl", "render")
+load("//internal/emitters:utils.bzl", "escape_kotlin_string", "sanitize_kdoc")
 
 def _kotlin_header_part(package):
     return render(
