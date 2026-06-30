@@ -29,7 +29,7 @@ fun interface Resolver {
     /**
      * Resolves the given runfile path to an absolute path, or returns null if it cannot be found.
      */
-    fun rlocation(path: String): String?
+    fun rlocation(path: RlocationPath): String?
 }
 
 /**
@@ -57,9 +57,9 @@ object RunfileResolver : Resolver, EnvProvider {
 
     private val defaultResolver = Resolver { path ->
         try {
-            runfiles.rlocation(path)
+            runfiles.rlocation(path.value)
         } catch (e: Exception) {
-            throw RunfileResolutionException("Error resolving path $path", e)
+            throw RunfileResolutionException("Error resolving path ${path.value}", e)
         }
     }
 
@@ -78,7 +78,7 @@ object RunfileResolver : Resolver, EnvProvider {
     @Volatile
     var envProvider: EnvProvider = defaultEnvProvider
 
-    override fun rlocation(path: String): String? = resolver.rlocation(path)
+    override fun rlocation(path: RlocationPath): String? = resolver.rlocation(path)
 
     override val envVars: Map<String, String>
         get() = envProvider.envVars
@@ -96,7 +96,7 @@ class FileSpec(val rlocationPath: RlocationPath) {
      * @throws RunfileResolutionException If the runfile cannot be resolved.
      */
     fun resolve(resolver: Resolver = RunfileResolver): File {
-        val resolvedPath = resolver.rlocation(rlocationPath.value)
+        val resolvedPath = resolver.rlocation(rlocationPath)
             ?: throw RunfileResolutionException("Failed to resolve runfile: ${rlocationPath.value}")
         return File(rlocationPath, resolvedPath)
     }

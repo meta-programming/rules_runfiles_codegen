@@ -14,7 +14,7 @@ class RunfileTest {
         private val paths: Map<String, String>,
         override val envVars: Map<String, String> = emptyMap()
     ) : Resolver, EnvProvider {
-        override fun rlocation(path: String): String? = paths[path]
+        override fun rlocation(path: RlocationPath): String? = paths[path.value]
     }
 
     @Test
