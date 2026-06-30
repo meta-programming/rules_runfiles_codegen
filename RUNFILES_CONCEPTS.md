@@ -33,12 +33,16 @@ A directory located directly *under* the runfiles root. It is named after a Baze
 
 ### Runfiles-root-relative path (rlocation path)
 
-The logical, canonical path of a runfile relative to the **runfiles root**. It serves as the unique key used to look up a runfile at runtime.
+The logical path of a runfile relative to the **runfiles root**. It serves as the key used to look up a runfile at runtime.
 
-*   **Format**: Since it is relative to the runfiles root, the first segment of the path is always the name of the workspace or repository subdirectory:
-    `[workspace_or_repository_name]/[package_path]/[file_name]`
+Depending on how it is constructed, an rlocation path can be:
+*   **Apparent**: Starts with an apparent repository name (e.g., `my_dep/path/to/file`). This is context-dependent and must be resolved at runtime using repository mapping.
+*   **Canonical**: Starts with a canonical repository name (e.g., `my_dep~1.0/path/to/file` or `_main/path/to/file`). This is globally unique within the runfiles tree and does not require runtime mapping.
+
+*   **Format**: `[workspace_or_repository_name]/[package_path]/[file_name]` (where the first segment is either the apparent or canonical repository name).
 *   *Citation*: [Bazel runfiles library specification](https://docs.google.com/document/d/e/2PACX-1vSDIrFnFvEYhKsCMdGdD40wZRBX3m3aZ5HhVj4CtHPmiXKDCxioTUbYsDydjKtFDAzER5eg7OjJWs3V/pub) (Section: "Library interface")
-*   *Example*: `my_project/data/config.json`
+*   *Example (Apparent)*: `my_dep/data/config.json`
+*   *Example (Canonical)*: `my_dep~1.0/data/config.json`
 
 ### Physical path vs. logical rlocation path
 
@@ -123,4 +127,5 @@ When a Bzlmod-aware **runfiles library** resolves an `rlocation` path:
 1.  **Do not hardcode physical paths**: Always use a Bzlmod-aware runfiles library to resolve paths at runtime.
 2.  **Use apparent names**: Construct `rlocation` paths using the apparent name of the repository (for example, your own module name or the dependency name declared in `MODULE.bazel`).
 3.  **Use `$(rlocationpath)` in BUILD files**: When passing runfile paths to tools via command-line arguments or environment variables in `BUILD` files, use the `$(rlocationpath //target)` helper. This ensures Bazel computes the correct logical path at build time.
+    *   *Note: This helper returns a **canonical** rlocation path (e.g., `dep~version/path/to/file`), which is globally unique and does not rely on runtime repository mapping.*
     *   *Citation*: [Bazel rules guide: attributes - runfiles](https://bazel.build/extending/rules#runfiles)

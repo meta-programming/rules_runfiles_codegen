@@ -75,19 +75,21 @@ type FileSpec struct {
 
 // NewSpec creates a new unresolved FileSpec reference.
 //
-// The rlocationpath argument must be the runfile's root-relative path (rlocation path),
-// which uniquely identifies the runfile in the runfiles tree.
+// The rlocationpath argument must be a runfiles-root-relative path (rlocation path).
 //
-// According to the Bazel Runfiles specification (https://bazel.build/extending/rules#runfiles),
-// this path follows the format "canonical_local_repository_name/path/to/file"
-// or "workspace_name/path/to/file".
+// Depending on how this path is constructed, it can be:
+//   - **Apparent**: Starts with an apparent repository name (e.g., "rules_go/path/to/file").
+//     This is common when hand-writing paths in code. It is context-dependent and
+//     resolved at runtime using the caller's repository mapping.
+//   - **Canonical**: Starts with a canonical repository name (e.g., "rules_go~~go~0.39.0/path/to/file"
+//     or "_main/path/to/file"). This is typically returned by the `$(rlocationpath ...)`
+//     helper in BUILD files. It is globally unique within the runfiles tree and
+//     does not require runtime mapping.
 //
-// Examples:
-//   - For a file at "data/config.json" in the main repository:
-//     If Bzlmod is enabled and no workspace name is set, it defaults to "_main/data/config.json".
-//     If a workspace name is defined (e.g., "my_project"), it is "my_project/data/config.json".
-//   - For a file in an external repository (e.g., "rules_go"), it starts with the repository name:
-//     "rules_go/go/tools/bzltestutil/README.md".
+// For a detailed explanation of these concepts, see RUNFILES_CONCEPTS.md in this
+// repository, or refer to the official Bazel documentation:
+//   - https://bazel.build/extending/rules#runfiles_location
+//   - https://bazel.build/external/overview#apparent-repo-name
 func NewSpec(rlocationpath string) FileSpec {
 	return FileSpec{rlocation: rlocationpath}
 }
