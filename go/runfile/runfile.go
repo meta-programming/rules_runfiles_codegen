@@ -57,7 +57,11 @@ func (p RlocationPath) String() string {
 // It is satisfied by the concrete [*runfiles.Runfiles] struct from rules_go.
 //
 // Note: This interface uses plain string for the path to remain compatible
-// with [*runfiles.Runfiles.Rlocation] without requiring a wrapper.
+// with [*runfiles.Runfiles.Rlocation] without requiring a wrapper. However,
+// the argument is conceptually an [RlocationPath].
+//   - When calling this method, convert an [RlocationPath] to string using string(path).
+//   - When implementing this interface (e.g., in mocks), you can convert the incoming
+//     string to [RlocationPath] using RlocationPath(path) for stronger type safety.
 type Resolver interface {
 	Rlocation(path string) (string, error)
 }
