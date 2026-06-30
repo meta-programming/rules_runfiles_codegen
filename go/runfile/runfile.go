@@ -75,20 +75,29 @@ type FileSpec struct {
 
 // NewSpec creates a new unresolved FileSpec reference.
 //
-// The rlocation argument must be the runfile's root-relative path (rlocation path),
-// which typically follows the format "workspace_name/path/to/file".
+// The rlocationpath argument must be the runfile's root-relative path (rlocation path),
+// which uniquely identifies the runfile in the runfiles tree.
 //
-// For example:
-//   - If your main module is named "my_project", a file at "data/config.json"
-//     would have the rlocation: "my_project/data/config.json".
-//   - If using Bzlmod and the main module name is not explicitly configured,
-//     it may default to "_main", e.g., "_main/data/config.json".
-func NewSpec(rlocation string) FileSpec {
-	return FileSpec{rlocation: rlocation}
+// According to the Bazel Runfiles specification (https://bazel.build/extending/rules#runfiles),
+// this path follows the format "canonical_local_repository_name/path/to/file"
+// or "workspace_name/path/to/file".
+//
+// Examples:
+//   - For a file at "data/config.json" in the main repository:
+//     If Bzlmod is enabled and no workspace name is set, it defaults to "_main/data/config.json".
+//     If a workspace name is defined (e.g., "my_project"), it is "my_project/data/config.json".
+//   - For a file in an external repository (e.g., "rules_go"), it starts with the repository name:
+//     "rules_go/go/tools/bzltestutil/README.md".
+func NewSpec(rlocationpath string) FileSpec {
+	return FileSpec{rlocation: rlocationpath}
 }
 
 // RlocationPath returns the logical, workspace-relative path of the runfile
-// (e.g., "my_project/data/config.json"). This is also known as the rlocation path.
+// (e.g., "my_project/data/config.json").
+//
+// This is the key used to look up the runfile in the runfiles manifest or directory.
+// For details on how Bazel structures these paths, see the Bazel Runfiles guide:
+// https://bazel.build/extending/rules#runfiles
 func (fs FileSpec) RlocationPath() string {
 	return fs.rlocation
 }
@@ -172,7 +181,11 @@ type File struct {
 }
 
 // RlocationPath returns the logical, workspace-relative path of the runfile
-// (e.g., "my_project/data/config.json"). This is also known as the rlocation path.
+// (e.g., "my_project/data/config.json").
+//
+// This is the key used to look up the runfile in the runfiles manifest or directory.
+// For details on how Bazel structures these paths, see the Bazel Runfiles guide:
+// https://bazel.build/extending/rules#runfiles
 func (f File) RlocationPath() string {
 	return f.rlocation
 }
