@@ -93,17 +93,6 @@ tools/devtool update-docs
 ```
 This will automatically build the examples and stardoc targets for all languages to generate the latest outputs, read them, and inject them into the README and docs directories.
 
-If you want to skip the build step (e.g., if you already built them and want it to run faster), you can pass the `--build=false` flag:
-```bash
-tools/devtool update-docs --build=false
-```
-
-You can also selectively update only the README or only Stardoc:
-```bash
-tools/devtool update-docs --readme=false  # Only update stardoc
-tools/devtool update-docs --stardoc=false # Only update README
-```
-
 ### Managing Module Versions
 
 During a release, all three released modules (`core`, `go`, `kotlin`) must share the exact same version.
