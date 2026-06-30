@@ -10,8 +10,11 @@ fun main() {
     println("Data: $content")
 
     // 2. Run an executable runfile with env propagation.
-    // Resolve, start, and read the output in a fluent chain.
-    val output = Resources.helperTool.resolve().processBuilder().start()
-        .inputStream.reader().readText().trim()
+    val process = Resources.helperTool.resolve().processBuilder().start()
+    val output = process.inputStream.reader().use { it.readText() }.trim()
+    val exitCode = process.waitFor()
+    if (exitCode != 0) {
+        error("Helper tool failed with exit code $exitCode")
+    }
     println("Helper output: $output")
 }
