@@ -89,7 +89,7 @@ func runUpdateReadme() error {
 		}
 
 		buildSnippet := extractSection(buildRaw, "quickstart")
-		installSnippet := fmt.Sprintf(`# MODULE.bazel
+		moduleFileSnippet := fmt.Sprintf(`# MODULE.bazel
 bazel_dep(name = "rules_runfile_codegen_%s", version = "%s")`, lang.ID, version)
 
 		type replacement struct {
@@ -100,7 +100,7 @@ bazel_dep(name = "rules_runfile_codegen_%s", version = "%s")`, lang.ID, version)
 		}
 
 		replacements := []replacement{
-			{fmt.Sprintf("<!-- %s_INSTALL_START -->", lang.LangMarker), fmt.Sprintf("<!-- %s_INSTALL_END -->", lang.LangMarker), "bazel", installSnippet},
+			{fmt.Sprintf("<!-- %s_INSTALL_START -->", lang.LangMarker), fmt.Sprintf("<!-- %s_INSTALL_END -->", lang.LangMarker), "bazel", moduleFileSnippet},
 			{fmt.Sprintf("<!-- %s_BUILD_START -->", lang.LangMarker), fmt.Sprintf("<!-- %s_BUILD_END -->", lang.LangMarker), "bazel", buildSnippet},
 			{fmt.Sprintf("<!-- %s_USAGE_START -->", lang.LangMarker), fmt.Sprintf("<!-- %s_USAGE_END -->", lang.LangMarker), lang.Extension, usageRaw},
 			{fmt.Sprintf("<!-- GENERATED_%s_START -->", lang.LangMarker), fmt.Sprintf("<!-- GENERATED_%s_END -->", lang.LangMarker), lang.Extension, genRaw},
