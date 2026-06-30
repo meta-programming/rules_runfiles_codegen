@@ -2,3 +2,7 @@ bazel-*
 scratch_test/
 .gemini/
 *.user
+
+# Go binaries
+tools/runfilesdevtool
+tools/cmd/devtool/devtool
