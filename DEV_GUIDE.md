@@ -70,7 +70,7 @@ bazel test //...
 
 ---
 
-## Developer Tools (`runfilesdevtool`)
+## Developer Tools (`devtool`)
 
 The project includes a unified developer tool to assist with common tasks like updating documentation and managing module versions. A wrapper script is provided at `tools/devtool` so you can run it easily from anywhere in the repository.
 

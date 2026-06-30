@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Wrapper script for runfilesdevtool.
+# Wrapper script for devtool.
 # Enables running the tool from anywhere in the repository.
 
 set -euo pipefail
@@ -9,4 +9,4 @@ set -euo pipefail
 TOOLS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 # Run the tool from the tools directory, passing all arguments
-exec go run -C "$TOOLS_DIR" ./cmd/runfilesdevtool "$@"
+exec go run -C "$TOOLS_DIR" ./cmd/devtool "$@"
