@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bazelbuild/buildtools/build"
+	"github.com/meta-programming/rules_runfiles_codegen/tools/internal/version"
 )
 
 // restoreRepoRoot returns the absolute path to the repo root.
@@ -56,34 +56,7 @@ func parseModuleVersion(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	ast, err := build.ParseModule(path, content)
-	if err != nil {
-		return "", err
-	}
-	for _, stmt := range ast.Stmt {
-		call, ok := stmt.(*build.CallExpr)
-		if !ok {
-			continue
-		}
-		ident, ok := call.X.(*build.Ident)
-		if !ok || ident.Name != "module" {
-			continue
-		}
-		for _, arg := range call.List {
-			assign, ok := arg.(*build.AssignExpr)
-			if !ok {
-				continue
-			}
-			key, ok := assign.LHS.(*build.Ident)
-			if ok && key.Name == "version" {
-				stringVal, ok := assign.RHS.(*build.StringExpr)
-				if ok {
-					return stringVal.Value, nil
-				}
-			}
-		}
-	}
-	return "", fmt.Errorf("version not found in module() declaration in %s", path)
+	return version.Parse(content)
 }
 
 // updateModuleVersion updates the version string in a MODULE.bazel file.
@@ -92,37 +65,9 @@ func updateModuleVersion(path string, newVersion string) error {
 	if err != nil {
 		return err
 	}
-	ast, err := build.ParseModule(path, content)
+	newContent, err := version.Update(content, newVersion)
 	if err != nil {
 		return err
 	}
-	updated := false
-	for _, stmt := range ast.Stmt {
-		call, ok := stmt.(*build.CallExpr)
-		if !ok {
-			continue
-		}
-		ident, ok := call.X.(*build.Ident)
-		if !ok || ident.Name != "module" {
-			continue
-		}
-		for _, arg := range call.List {
-			assign, ok := arg.(*build.AssignExpr)
-			if !ok {
-				continue
-			}
-			key, ok := assign.LHS.(*build.Ident)
-			if ok && key.Name == "version" {
-				assign.RHS = &build.StringExpr{Value: newVersion}
-				updated = true
-				break
-			}
-		}
-	}
-	if !updated {
-		return fmt.Errorf("version not found in module() declaration in %s", path)
-	}
-
-	newContent := build.Format(ast)
 	return os.WriteFile(path, newContent, 0644)
 }
