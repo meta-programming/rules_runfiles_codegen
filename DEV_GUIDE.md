@@ -81,7 +81,7 @@ tools/devtool [command]
 
 ### Updating the Documentation
 
-The **[README.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/README.md)** contains sections showing the "Actual Generated Code" for both Go and Kotlin. To ensure these snippets are 100% accurate and compiler-verified, they are automatically synchronized from the integration test outputs. The Stardoc documentation is also synchronized from the generated output.
+The **[README.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/README.md)** contains sections showing the "Actual Generated Code" for both Go and Kotlin. To ensure these snippets are 100% accurate and compiler-verified, they are automatically synchronized from the example outputs. The Stardoc documentation is also synchronized from the generated output.
 
 If you make changes to the code generators or docstrings, you should update the documentation before committing.
 
