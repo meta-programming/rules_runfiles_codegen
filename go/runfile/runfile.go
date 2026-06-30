@@ -84,7 +84,9 @@ type FileSpec struct {
 //   - **Canonical**: Starts with a canonical repository name (e.g., "rules_go~~go~0.39.0/path/to/file"
 //     or "_main/path/to/file"). This is typically returned by the `$(rlocationpath ...)`
 //     helper in BUILD files. It is globally unique within the runfiles tree and
-//     does not require runtime mapping.
+//     does not require runtime mapping. Note that under Bzlmod, the main repository
+//     is always assigned the fixed canonical name "_main" to decouple it from legacy
+//     workspace names (see https://bazel.build/external/migration).
 //
 // For a detailed explanation of these concepts, see RUNFILES_CONCEPTS.md in this
 // repository, or refer to the official Bazel documentation:
