@@ -1,2 +1,4 @@
 # Core module for rules_runfile_codegen
 package(default_visibility = ["//visibility:public"])
+
+exports_files(["MODULE.bazel"])

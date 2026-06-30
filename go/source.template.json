@@ -1,0 +1,4 @@
+{
+  "url": "https://github.com/meta-programming/rules_runfiles_codegen/archive/refs/tags/{TAG}.tar.gz",
+  "strip_prefix": "rules_runfiles_codegen-{VERSION}/go"
+}
