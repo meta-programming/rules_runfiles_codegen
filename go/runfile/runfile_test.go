@@ -81,8 +81,8 @@ func TestResolve(t *testing.T) {
 				t.Fatalf("Resolve() failed: %v", err)
 			}
 
-			if file.Rlocation() != tt.rlocation {
-				t.Errorf("Rlocation() = %q, want %q", file.Rlocation(), tt.rlocation)
+			if file.RlocationPath() != tt.rlocation {
+				t.Errorf("RlocationPath() = %q, want %q", file.RlocationPath(), tt.rlocation)
 			}
 			if file.Path() != tt.wantPath {
 				t.Errorf("Path() = %q, want %q", file.Path(), tt.wantPath)

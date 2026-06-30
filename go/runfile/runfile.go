@@ -87,8 +87,9 @@ func NewSpec(rlocation string) FileSpec {
 	return FileSpec{rlocation: rlocation}
 }
 
-// Rlocation returns the logical, workspace-relative path of the runfile.
-func (fs FileSpec) Rlocation() string {
+// RlocationPath returns the logical, workspace-relative path of the runfile
+// (e.g., "my_project/data/config.json"). This is also known as the rlocation path.
+func (fs FileSpec) RlocationPath() string {
 	return fs.rlocation
 }
 
@@ -170,9 +171,9 @@ type File struct {
 	absPath   string
 }
 
-// Rlocation returns the logical, workspace-relative path of the runfile
-// (e.g., "my_project/data/config.json").
-func (f File) Rlocation() string {
+// RlocationPath returns the logical, workspace-relative path of the runfile
+// (e.g., "my_project/data/config.json"). This is also known as the rlocation path.
+func (f File) RlocationPath() string {
 	return f.rlocation
 }
 
