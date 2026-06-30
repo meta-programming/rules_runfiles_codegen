@@ -2,27 +2,29 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
-	"os/exec"
 
 	"github.com/example/project/examples/go/resources"
 )
 
 func main() {
-	fmt.Println("Data file path:", resources.DataFile)
-	data, err := os.ReadFile(resources.DataFile)
-	if err != nil {
-		log.Fatalf("Failed to read data file: %v", err)
-	}
-	fmt.Printf("Data file contents: %s\n", string(data))
+	// 1. Access the resolved runfile path.
+	// Resources are resolved at startup (init-time).
+	path := resources.DataFile.Path()
 
-	fmt.Println("Helper tool path:", resources.HelperTool)
-	cmd := exec.Command(resources.HelperTool, "arg1", "arg2")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
+	content, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatalf("Failed to run helper tool: %v", err)
+		fmt.Fprintf(os.Stderr, "Error reading runfile: %v\n", err)
+		os.Exit(1)
 	}
+	fmt.Printf("Data: %s\n", string(content))
+
+	// 2. Run an executable runfile with env propagation.
+	cmd := resources.HelperTool.Cmd()
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error running helper: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Helper output: %s", string(output))
 }

@@ -1,99 +1,153 @@
-load("@rules_runfiles_codegen//:codegen.bzl", "generate_go_source")
 load("@rules_go//go:def.bzl", "go_library")
+load("@rules_runfile_codegen_core//internal:rules.bzl", "runfile_codegen")
 
 def go_runfile(name, target, doc = ""):
-    """Creates a runfile entry definition."""
-    return struct(
-        name = name,
-        target = target,
-        doc = doc,
-    )
+    """Creates a runfile entry configuration for Go code generation.
 
-def _go_runfile_codegen_impl(ctx):
-    out = ctx.actions.declare_file(ctx.label.name + ".go")
-    
-    entries = []
-    runfiles_deps = []
-    
-    for i in range(len(ctx.attr.targets)):
-        target = ctx.attr.targets[i]
-        meta_str = ctx.attr.metadata[i]
-        
-        # Since json.decode might not be available in all Starlark environments,
-        # we can parse a simple CSV or just use structural attributes.
-        # But json.decode is available in Bazel.
-        meta = json.decode(meta_str)
-        
-        # Get the primary file
-        files = target[DefaultInfo].files.to_list()
-        if not files:
-            fail("Target {} does not provide any files".format(target.label))
-        
-        file = files[0]
-        
-        # Construct runfiles path
-        # In Bazel, the runfiles path for a file is generally its short_path.
-        # But if it's from an external repository, short_path starts with `../repo_name/`.
-        # The runfiles tree layout: `repo_name/...`.
-        if file.short_path.startswith("../"):
-            runfiles_path = file.short_path[3:]
-        else:
-            runfiles_path = ctx.workspace_name + "/" + file.short_path
-            
-        entries.append(struct(
-            name = meta["name"],
-            doc = meta["doc"],
-            runfiles_path = runfiles_path,
-        ))
-        
-        if target[DefaultInfo].default_runfiles:
-            runfiles_deps.append(target[DefaultInfo].default_runfiles)
-            
-    src_content = generate_go_source(ctx.attr.importpath, entries)
-    ctx.actions.write(out, src_content)
-    
-    merged_runfiles = ctx.runfiles().merge_all(runfiles_deps)
-    
-    return [DefaultInfo(
-        files = depset([out]),
-        runfiles = merged_runfiles,
-    )]
+    This helper function constructs a structured dictionary representing a single runfile
+    dependency. It is intended to be passed in the `entries` list of `go_runfile_library`.
 
-_go_runfile_codegen = rule(
-    implementation = _go_runfile_codegen_impl,
-    attrs = {
-        "importpath": attr.string(mandatory = True),
-        "targets": attr.label_list(allow_files = True, mandatory = True),
-        "metadata": attr.string_list(mandatory = True),
-    },
-)
+    Args:
+        name: The Go variable name that will be generated to access this runfile.
+            This should follow Go-idiomatic naming conventions (e.g., `ConfigJSON`,
+            `TestData`). The generated code will expose this as a public string variable.
+        target: The Bazel target label of the runfile (e.g., `//path/to:file.json` or
+            `:my_target`). This target will be automatically added to the `data`
+            attribute of the underlying `go_library` to ensure it is available at runtime.
+        doc: A descriptive comment for the generated Go variable. This will be
+            included as a Go docstring on the generated variable, providing context
+            for developers using the generated library.
+
+    Returns:
+        A dictionary containing "name", "target", and "doc" keys, representing the runfile entry.
+    """
+    return {
+        "name": name,
+        "target": target,
+        "doc": doc,
+    }
 
 def go_runfile_library(name, importpath, entries, **kwargs):
-    """Generates a go_library that provides access to the specified runfiles.
-    
-    Args:
-        name: Name of the target.
-        importpath: The Go importpath of the generated library.
-        entries: A list of `go_runfile` structs.
-        **kwargs: Additional arguments to pass to go_library.
-    """
-    targets = [e.target for e in entries]
-    metadata = [json.encode({"name": e.name, "doc": e.doc}) for e in entries]
-    
-    codegen_name = name + "_codegen"
-    
-    _go_runfile_codegen(
-        name = codegen_name,
-        importpath = importpath,
-        targets = targets,
-        metadata = metadata,
+    """Generates a Go library containing compile-time safe accessors for runfiles.
+
+    This macro automates the process of accessing Bazel runfiles in Go. It generates
+    a Go source file containing resolved runfile paths, allowing you to access them
+    via type-safe variables instead of hardcoded string literals.
+
+    The generated library uses `@rules_go//go/runfiles` to resolve the runfiles at runtime.
+
+    ### Example Usage
+
+    In your `BUILD.bazel`:
+
+    ```bazel
+    load("//go:defs.bzl", "go_runfile", "go_runfile_library")
+
+    go_runfile_library(
+        name = "my_runfiles",
+        importpath = "github.com/example/project/my_runfiles",
+        entries = [
+            go_runfile(
+                name = "ConfigJSON",
+                target = "//config:config.json",
+                doc = "The main configuration file.",
+            ),
+            go_runfile(
+                name = "HelperTool",
+                target = "//tools:helper_tool", # An executable target
+                doc = "A helper CLI tool.",
+            ),
+        ],
     )
-    
+
+    go_binary(
+        name = "my_binary",
+        srcs = ["main.go"],
+        deps = [":my_runfiles"],
+    )
+    ```
+
+    In your `main.go`:
+
+    ```go
+    package main
+
+    import (
+        "fmt"
+        "os"
+        "log"
+
+        "github.com/example/project/my_runfiles"
+    )
+
+    func main() {
+        // 1. Accessing a regular runfile:
+        // Use .Path() to get the resolved absolute path.
+        configPath := my_runfiles.ConfigJSON.Path()
+        content, err := os.ReadFile(configPath)
+        if err != nil {
+            log.Fatalf("Failed to read config: %v", err)
+        }
+        fmt.Printf("Config: %s\\n", content)
+
+        // 2. Running an executable runfile:
+        // Use .Cmd() to get a pre-configured *exec.Cmd with runfiles env vars.
+        cmd := my_runfiles.HelperTool.Cmd("--verbose", "run")
+        cmd.Stdout = os.Stdout
+        cmd.Stderr = os.Stderr
+        if err := cmd.Run(); err != nil {
+            log.Fatalf("Helper tool failed: %v", err)
+        }
+    }
+    ```
+
+    Args:
+        name: A unique name for this target. The generated `go_library` will have this name.
+            A helper target named `{name}_codegen` will also be created.
+        importpath: The import path for the generated Go library. This is required by `go_library`.
+        entries: A list of runfile entries. Each entry must be a dictionary with `name`, `target`,
+            and `doc` keys, typically constructed using the `go_runfile` helper function.
+        **kwargs: Additional arguments to propagate to the underlying `go_library` target.
+            Common arguments include `visibility`, `testonly`, and `tags`.
+            `deps` and `data` will be merged with the automatically generated dependencies.
+            `srcs` is not allowed as it is generated by this macro.
+    """
+    if "srcs" in kwargs:
+        fail("Cannot specify 'srcs' in go_runfile_library, they are generated automatically.")
+
+    # Extract parallel lists for the generator rule
+    names = [e["name"] for e in entries]
+    targets = [e["target"] for e in entries]
+    docs = [e["doc"] for e in entries]
+
+    # Propagate testonly and tags
+    testonly = kwargs.get("testonly", None)
+    tags = kwargs.get("tags", None)
+
+    # Merge data and deps
+    user_data = kwargs.pop("data", [])
+    user_deps = kwargs.pop("deps", [])
+
+    # Call the core generator rule
+    runfile_codegen(
+        name = name + "_codegen",
+        package = importpath,
+        language = "go",
+        names = names,
+        targets = targets,
+        docs = docs,
+        testonly = testonly,
+        tags = tags,
+    )
+
+    # Public Go library
     go_library(
         name = name,
-        srcs = [codegen_name],
+        srcs = [":" + name + "_codegen"],
         importpath = importpath,
-        data = targets, # Needed to ensure they are built and available as runfiles
-        deps = ["@rules_go//go/runfiles:go_default_library"],
+        deps = [
+            "@rules_go//go/runfiles",
+        ] + user_deps,  # Merge deps
+        data = targets + user_data,  # Merge data
         **kwargs
     )

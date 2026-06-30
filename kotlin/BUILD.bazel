@@ -1,0 +1,27 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["defs.bzl"])
+
+bzl_library(
+    name = "defs_bzl",
+    srcs = ["defs.bzl"],
+    deps = [
+        ":rules_kotlin_jvm",
+        "@rules_runfile_codegen_core//internal:internal_bzl",
+    ],
+)
+
+bzl_library(
+    name = "rules_kotlin_jvm",
+    srcs = ["@rules_kotlin//kotlin:kotlin"],
+    deps = [
+        "@rules_kotlin//kotlin/internal:internal",
+        "@bazel_features//:features",
+        "@rules_java//java:rules",
+        "@rules_java//java/common:common",
+        "@rules_java//java/private:proto_support",
+        "@bazel_skylib//lib:paths",
+    ],
+)

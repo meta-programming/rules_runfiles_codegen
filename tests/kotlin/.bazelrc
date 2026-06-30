@@ -1,0 +1,4 @@
+# Workaround for rules_kotlin 2.4.0 compatibility with Bazel 8+
+# rules_kotlin 2.4.0 contains an empty glob(["*.tgz"]) which fails in Bazel 8+ by default.
+test --incompatible_disallow_empty_glob=false
+build --incompatible_disallow_empty_glob=false

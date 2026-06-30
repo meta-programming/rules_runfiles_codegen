@@ -1,0 +1,2 @@
+# Core module for rules_runfile_codegen
+package(default_visibility = ["//visibility:public"])

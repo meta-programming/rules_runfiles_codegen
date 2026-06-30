@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, re-arch ]
+  pull_request:
+    branches: [ main, re-arch ]
+
+jobs:
+  test-and-check:
+    name: Test and Check README
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 'stable'
+
+    - name: Set up Bazel
+      uses: bazelbuild/setup-bazelisk@v3
+
+    # We must run the integration tests FIRST to generate the bazel-bin outputs
+    # that the README updater reads. Running 'bazel test' also acts as our
+    # integration test suite.
+
+    - name: Run Core Starlark Unit Tests
+      run: |
+        cd core
+        bazel test //internal/...
+
+    - name: Run Go Integration Tests
+      run: |
+        cd tests/go
+        bazel test //...
+
+    - name: Run Go Quickstart Example
+      run: |
+        cd examples/go
+        bazel test //...
+
+    - name: Run Kotlin Integration Tests
+      run: |
+        cd tests/kotlin
+        bazel test //...
+
+    - name: Run Kotlin Quickstart Example
+      run: |
+        cd examples/kotlin
+        bazel test //...
+
+    - name: Verify README is Synchronized
+      run: |
+        go run tools/update_readme.go
+        
+        # git diff --exit-code returns 0 if there are no changes, and 1 if there are.
+        # This will fail the CI if the developer forgot to run the tool locally.
+        git diff --exit-code README.md || (
+          echo "=============================================================================="
+          echo " ERROR: README.md is out of sync with the actual test or generated code."
+          echo " Please run the following command locally and commit the changes:"
+          echo "   go run tools/update_readme.go"
+          echo "=============================================================================="
+          exit 1
+        )

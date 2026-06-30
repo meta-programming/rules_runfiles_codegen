@@ -1,0 +1,17 @@
+load("//internal:emitters/template_test.bzl", "template_test_suite")
+load("//internal:emitters/utils_test.bzl", "utils_test_suite")
+
+package(default_visibility = ["//visibility:public"])
+
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+exports_files(glob(["**/*.bzl"]))
+
+bzl_library(
+    name = "internal_bzl",
+    srcs = glob(["**/*.bzl"], exclude = ["**/*_test.bzl"]),
+    visibility = ["//visibility:public"],
+)
+
+template_test_suite(name = "template_tests")
+utils_test_suite(name = "utils_tests")

@@ -1,27 +1,28 @@
 # # [START quickstart]
-load("@rules_go//go:def.bzl", "go_binary")
-load("@rules_runfile_codegen_go//:defs.bzl", "go_runfile", "go_runfile_library")
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_binary")
+load("@rules_runfile_codegen_kotlin//:defs.bzl", "kt_runfile", "kt_jvm_runfile_library")
 
 package(default_visibility = ["//visibility:private"])
 
 # A helper binary to demonstrate executable runfiles
-go_binary(
+kt_jvm_binary(
     name = "helper",
-    srcs = ["helper.go"],
+    srcs = ["Helper.kt"],
+    main_class = "com.example.project.examples.HelperKt",
 )
 
 # Generate the runfile accessor library
-go_runfile_library(
+kt_jvm_runfile_library(
     name = "resources",
-    importpath = "github.com/example/project/examples/go/resources",
+    package = "com.example.project.examples.resources",
     entries = [
-        go_runfile(
-            name = "DataFile",
+        kt_runfile(
+            name = "configJson",
             target = "data/dummy.txt",
             doc = "A dummy data file.",
         ),
-        go_runfile(
-            name = "HelperTool",
+        kt_runfile(
+            name = "helperTool",
             target = ":helper",
             doc = "A helper tool executable.",
         ),
@@ -29,9 +30,10 @@ go_runfile_library(
 )
 
 # Use the library in a binary
-go_binary(
+kt_jvm_binary(
     name = "main",
-    srcs = ["main.go"],
+    srcs = ["Main.kt"],
+    main_class = "com.example.project.examples.MainKt",
     deps = [
         ":resources",
     ],

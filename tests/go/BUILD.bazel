@@ -1,0 +1,44 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_test")
+load("@rules_runfile_codegen_go//:defs.bzl", "go_runfile", "go_runfile_library")
+
+package(default_visibility = ["//visibility:private"])
+
+# Dummy executable
+go_binary(
+    name = "helper_bin",
+    srcs = ["helper_bin.go"],
+    data = ["data/helper_data.txt"],
+    deps = [
+        "@rules_go//go/runfiles",
+    ],
+)
+
+go_runfile_library(
+    name = "test_resources",
+    entries = [
+        go_runfile(
+            name = "DataFile",
+            doc = "A dummy data file.",
+            target = "data/dummy.txt",
+        ),
+        go_runfile(
+            name = "HelperTool",
+            doc = "A helper tool executable.",
+            target = ":helper_bin",
+        ),
+        go_runfile(
+            name = "ExternalFile",
+            doc = "An external file from rules_go.",
+            target = "@rules_go//:LICENSE.txt",
+        ),
+    ],
+    importpath = "github.com/example/project/repo/tests/go/test_resources",
+)
+
+go_test(
+    name = "integration_test",
+    srcs = ["integration_test.go"],
+    deps = [
+        "//:test_resources",
+    ],
+)

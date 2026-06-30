@@ -1,0 +1,4 @@
+bazel-*
+scratch_test/
+.gemini/
+*.user

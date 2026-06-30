@@ -1,0 +1,56 @@
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_binary")
+load("@rules_runfile_codegen_kotlin//:defs.bzl", "kt_runfile", "kt_jvm_runfile_library")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+package(default_visibility = ["//visibility:private"])
+
+# Dummy executable
+kt_jvm_binary(
+    name = "helper_bin",
+    srcs = ["HelperBin.kt"],
+    data = ["data/helper_data.txt"],
+    main_class = "com.example.project.tests.HelperBinKt",
+    deps = [
+        "@bazel_tools//tools/java/runfiles",
+    ],
+)
+
+kt_jvm_runfile_library(
+    name = "test-resources",
+    entries = [
+        kt_runfile(
+            name = "configJson",
+            doc = "A dummy data file.",
+            target = "data/dummy.txt",
+        ),
+        kt_runfile(
+            name = "helperTool",
+            doc = "A helper tool executable.",
+            target = ":helper_bin",
+        ),
+        kt_runfile(
+            name = "externalFile",
+            doc = "An external file from rules_kotlin.",
+            target = "@rules_kotlin//:LICENSE",
+        ),
+    ],
+    package = "com.example.project.tests.resources",
+)
+
+# Binary that runs the assertions
+kt_jvm_binary(
+    name = "integration_test_bin",
+    srcs = ["IntegrationTest.kt"],
+    main_class = "com.example.project.tests.IntegrationTestKt",
+    deps = [
+        ":test-resources",
+        "@bazel_tools//tools/java/runfiles",
+    ],
+)
+
+# sh_test that wraps the binary
+sh_test(
+    name = "integration_test",
+    srcs = ["run_test.sh"],
+    data = [":integration_test_bin"],
+)
