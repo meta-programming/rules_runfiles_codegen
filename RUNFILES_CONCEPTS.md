@@ -12,7 +12,7 @@ To avoid ambiguity, it is critical to distinguish between the **Runfiles Root** 
 The top-level directory containing the entire runfiles structure for a target. It is physically located next to the executable and is typically named `<binary_name>.runfiles`.
 *   **This is the root of the runfiles tree.**
 *   All logical `rlocation` paths are relative to this directory.
-*   *Citation*: [Bazel Rules Guide: Runfiles](https://bazel.build/extending/rules#runfiles)
+*   *Citation*: [Bazel Rules Guide: Runfiles Location](https://bazel.build/extending/rules#runfiles_location)
 *   *Example Path*: `bazel-bin/src/main.runfiles/`
 
 ### Workspace/Repository Subdirectory
@@ -43,7 +43,7 @@ At runtime, Bazel prepares the runfiles using one of two physical layouts, depen
 
 ### A. The Runfiles Directory (Symlink Tree)
 On Linux and macOS, Bazel populates the Runfiles Root with a physical tree of symlinks pointing to the actual files in the source or output trees.
-*   *Citation*: [Bazel Rules Guide: Runfiles symlink structure](https://bazel.build/extending/rules#runfiles)
+*   *Citation*: [Bazel Rules Guide: Runfiles Symlinks](https://bazel.build/extending/rules#runfiles_symlinks)
     > "The runfiles directory contains symlinks to the runfiles [...] The symlinks are structured as follows:
     > `runfiles_dir/workspace_name/package_name/file_name`"
 
@@ -66,15 +66,17 @@ The transition from the legacy `WORKSPACE` system to `Bzlmod` (Bazel's module sy
 *   **Apparent Name**: The local name (nickname) given to a dependency within a module (e.g., `@rules_go`). This is what developers write in `BUILD` and `MODULE.bazel` files.
 *   **Canonical Name**: The globally unique name Bazel generates for a dependency to avoid version conflicts (e.g., `rules_go~0.39.0`).
 *   **Physical Layout**: Under Bzlmod, the subdirectories under the Runfiles Root are named using **canonical names**, not apparent names.
-    *   *Citation*: [Bazel External Dependencies: Canonical Repository Names](https://bazel.build/external/overview#canonical-repo-names)
+    *   *Citation*: [Bazel External Dependencies: Canonical Repository Name](https://bazel.build/external/overview#canonical-repo-name)
         > "The canonical repository name of a repository is the name of the directory it occupies in the execution root and in the runfiles directory."
 
 ### The Repository Mapping File (`_repo_mapping`)
 Because canonical names are unstable and contain version numbers, developers must never hardcode them in `rlocation` calls. Instead, they must use the **apparent name**.
 
 To resolve this, Bazel generates a **`_repo_mapping`** file (also referred to as the `repo_mapping` manifest) at the root of the runfiles tree. This file maps the tuple `(apparent_name, current_repo)` to the `canonical_name` currently resolved by Bazel.
-*   *Citation*: [Bazel External Dependencies: Repository Mapping](https://bazel.build/external/overview#repository-mapping)
-    > "Bazel generates a `{binary}.repo_mapping` file to help binaries resolve these repository mappings at runtime."
+*   *Citation*: [Bazel External Dependencies: Apparent Repository Name / Repository Mapping](https://bazel.build/external/overview#apparent-repo-name)
+    > "Conversely, this can be understood as a repository mapping: each repo maintains a mapping from "apparent repo name" to a "canonical repo name"."
+    
+    *(Note: Bazel also generates a `{binary}.repo_mapping` file to help binaries resolve these repository mappings at runtime).*
 
 ### Resolution Semantics under Bzlmod
 When a Bzlmod-aware **Runfiles Library** resolves an `rlocation` path:
