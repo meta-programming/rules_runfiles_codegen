@@ -137,16 +137,9 @@ Create a standalone Bazel workspace in `repo/examples/<lang>/` to demonstrate us
 
 ### 3. Integrate with the Developer Tool (devtool)
 
-To enable automatic documentation updates and version management, you must register the new language with the devtool:
+To enable automatic documentation updates and version management, you must register the new language with the devtool.
 
-1.  **Register the language**: Open [tools/cmd/devtool/languages.go](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/tools/cmd/devtool/languages.go) and add a new `LanguageConfig` entry to the `languages` slice.
-2.  **Add README placeholders**: Open [README.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/README.md) and add the following HTML comment markers in the appropriate sections:
-    *   `<!-- <LANG>_INSTALL_START -->` / `<!-- <LANG>_INSTALL_END -->` (for the `MODULE.bazel` dependency snippet)
-    *   `<!-- <LANG>_BUILD_START -->` / `<!-- <LANG>_BUILD_END -->` (for the `BUILD.bazel` quickstart snippet)
-    *   `<!-- <LANG>_USAGE_START -->` / `<!-- <LANG>_USAGE_END -->` (for the example usage code)
-    *   `<!-- GENERATED_<LANG>_START -->` / `<!-- GENERATED_<LANG>_END -->` (for the actual generated code output)
-    *   *(Replace `<LANG>` with the uppercase name of the language, e.g., `PYTHON`).*
-3.  **Sync the README**: Run `tools/devtool update-readme` from the repository root to verify that the devtool automatically builds your example and injects the code into the README.
+Follow the instructions in [tools/cmd/devtool/languages.go](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/tools/cmd/devtool/languages.go) to register the new language and set up the required placeholders in the README.md.
 
 ### 4. Create Integration Tests
 
