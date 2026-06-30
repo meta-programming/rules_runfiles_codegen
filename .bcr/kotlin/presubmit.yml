@@ -1,7 +1,9 @@
 matrix:
-  platform: ["ubuntu2004", "macos"]
+  platform: ["ubuntu2004", "macos", "windows"]
 tasks:
-  build_targets:
-    - "//..."
-  test_targets:
-    - "//..."
+  verify_targets:
+    name: "Verify Kotlin targets"
+    platform: ${{ platform }}
+    build_targets:
+      - "@rules_runfile_codegen_kotlin//:defs_bzl"
+      - "@rules_runfile_codegen_kotlin//runfiles:runfiles"
