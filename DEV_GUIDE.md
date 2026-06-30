@@ -124,11 +124,10 @@ Follow these steps to implement and integrate a new language:
 ### 1. Implement the Rules and Generator
 
 1.  **Create the module directory**: Create a new directory at the root (e.g., `repo/python/`).
-2.  **Define the Starlark API**: In `repo/<lang>/defs.bzl`, define the public macros. Follow the established naming convention:
-    *   `<lang_prefix>_runfile_library`: The main macro users will call. It should generate a library target in the target language.
-    *   It should accept a list of runfiles (data dependencies) and generate a library that exposes them as symbolic names.
-3.  **Implement the generator**: Write the code generator (typically in Go, located in `repo/<lang>/generator/`). This generator should read the runfiles metadata and output the source code.
-4.  **Create the MODULE.bazel**: Define the module in `repo/<lang>/MODULE.bazel`. It must depend on `rules_runfile_codegen_core`.
+2.  **Implement the Starlark Emitter**: In the core module (`repo/core/internal/emitters/<lang>.bzl`), write a Starlark function that takes the analyzed runfiles and generates the source code string for the target language.
+3.  **Update the Core Rule**: Modify `repo/core/internal/rules.bzl` to load your new emitter and support the new language in the `runfile_codegen` rule.
+4.  **Define the Public API**: In `repo/<lang>/defs.bzl`, define the public macros that developers will use (e.g., `<lang_prefix>_runfile_library`). This macro should wrap the core `runfile_codegen` rule and the target language's native library rule.
+5.  **Create the MODULE.bazel**: Define the module in `repo/<lang>/MODULE.bazel`. It must depend on `rules_runfile_codegen_core`.
 
 ### 2. Create an Example Workspace
 
