@@ -29,8 +29,11 @@ fun interface Resolver {
     fun rlocation(path: RlocationPath): String?
 
     /**
-     * The environment variables to propagate to executables.
-     * Defaults to empty map.
+     * The environment variables necessary to propagate runfiles location information
+     * to subprocesses. Defaults to an empty map (useful for mocks/custom resolvers).
+     *
+     * For the default resolver, this contains variables like `RUNFILES_DIR` or
+     * `RUNFILES_MANIFEST_FILE` which Bazel uses to locate runfiles.
      */
     val envVars: Map<String, String>
         get() = emptyMap()
@@ -68,7 +71,10 @@ fun interface Resolver {
 /**
  * Represents an unresolved runfile specification.
  */
-class FileSpec(val rlocationPath: RlocationPath) {
+class FileSpec(
+    /** The logical, runfiles-root-relative path for this runfile. */
+    val rlocationPath: RlocationPath
+) {
     /**
      * Attempts to find the runfile on disk.
      *
@@ -86,7 +92,10 @@ class FileSpec(val rlocationPath: RlocationPath) {
 /**
  * Represents an unresolved executable runfile specification.
  */
-class ExecutableSpec(val rlocationPath: RlocationPath) {
+class ExecutableSpec(
+    /** The logical, runfiles-root-relative path for this executable runfile. */
+    val rlocationPath: RlocationPath
+) {
     private val fileSpec = FileSpec(rlocationPath)
 
     /**
@@ -102,7 +111,9 @@ class ExecutableSpec(val rlocationPath: RlocationPath) {
  * Represents a runfile that has been successfully located on disk.
  */
 open class File internal constructor(
+    /** The logical, runfiles-root-relative path that was resolved. */
     val rlocationPath: RlocationPath,
+    /** The physical, absolute path to the runfile on disk. */
     val path: Path
 )
 
@@ -112,6 +123,12 @@ open class File internal constructor(
 class Executable internal constructor(
     rlocationPath: RlocationPath,
     path: Path,
+    /**
+     * The environment variables necessary to propagate runfiles location information
+     * to this executable when run as a subprocess.
+     *
+     * These are automatically applied when using [processBuilder].
+     */
     val envVars: Map<String, String>
 ) : File(rlocationPath, path) {
 
