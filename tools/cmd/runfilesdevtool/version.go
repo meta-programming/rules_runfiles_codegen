@@ -21,7 +21,7 @@ var versionCmd = &cobra.Command{
 
 var versionCheckCmd = &cobra.Command{
 	Use:   "check",
-	Short: "Verify that all modules have the same version",
+	Short: "Verify that core, go, and kotlin modules have the same version",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runVersionCheck()
 	},
@@ -29,7 +29,7 @@ var versionCheckCmd = &cobra.Command{
 
 var versionSetCmd = &cobra.Command{
 	Use:   "set [version]",
-	Short: "Set the version in all MODULE.bazel files",
+	Short: "Set the version in core, go, and kotlin MODULE.bazel files",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runVersionSet(args[0])
@@ -72,7 +72,7 @@ func runVersionCheck() error {
 		return fmt.Errorf("version mismatch detected")
 	}
 
-	fmt.Println("All module versions are consistent.")
+	fmt.Println("Core, go, and kotlin module versions are consistent.")
 	return nil
 }
 
@@ -81,7 +81,7 @@ func runVersionSet(newVersion string) error {
 	goPath := filepath.Join(resolvedRoot, "go/MODULE.bazel")
 	kotlinPath := filepath.Join(resolvedRoot, "kotlin/MODULE.bazel")
 
-	fmt.Printf("Setting version to %s in all modules...\n", newVersion)
+	fmt.Printf("Setting version to %s in core, go, and kotlin modules...\n", newVersion)
 
 	if err := updateModuleVersion(corePath, newVersion); err != nil {
 		return fmt.Errorf("failed to update core version: %w", err)
@@ -93,6 +93,6 @@ func runVersionSet(newVersion string) error {
 		return fmt.Errorf("failed to update kotlin version: %w", err)
 	}
 
-	fmt.Println("Successfully updated all module versions.")
+	fmt.Println("Successfully updated core, go, and kotlin module versions.")
 	return nil
 }

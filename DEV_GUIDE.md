@@ -105,12 +105,12 @@ During a release, all three released modules (`core`, `go`, `kotlin`) must share
     ```bash
     tools/devtool version check
     ```
-    This verifies that all `MODULE.bazel` files have matching versions.
+    This verifies that the core, go, and kotlin modules have matching versions.
 *   **Set a new version**:
     ```bash
     tools/devtool version set 0.2.0
     ```
-    This uses the official Bazel AST parser to safely update the version in all `MODULE.bazel` files at once, preserving formatting and comments.
+    This uses the official Bazel AST parser to safely update the version in the core, go, and kotlin MODULE.bazel files at once, preserving formatting and comments.
 
 
 
