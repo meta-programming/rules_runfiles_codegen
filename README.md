@@ -117,19 +117,23 @@ import (
 )
 
 func main() {
-	// 1. Access the resolved runfile path.
-	// Resources are resolved at startup (init-time).
-	path := resources.DataFile.Path()
+	// 1. Access the resolved runfile path safely.
+	dataFile, err := resources.DataFile.Resolve()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error resolving runfile: %v\n", err)
+		os.Exit(1)
+	}
 
-	content, err := os.ReadFile(path)
+	content, err := os.ReadFile(dataFile.Path())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading runfile: %v\n", err)
 		os.Exit(1)
 	}
 	fmt.Printf("Data: %s\n", string(content))
 
-	// 2. Run an executable runfile with env propagation.
-	cmd := resources.HelperTool.Cmd()
+	// 2. Run an executable runfile with env propagation (fail-fast).
+	helper := resources.HelperTool.MustResolve()
+	cmd := helper.Cmd()
 	output, err := cmd.Output()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error running helper: %v\n", err)
@@ -153,73 +157,19 @@ func main() {
 package resources
 
 import (
-	"fmt"
-	"os"
-	"os/exec"
-	"github.com/bazelbuild/rules_go/go/runfiles"
+	"github.com/meta-programming/rules_runfiles_codegen/go/runfile"
 )
-
-// Runfile represents a resolved runfile.
-type Runfile struct {
-	absPath string
-}
-
-// Path returns the resolved absolute path of the runfile.
-func (r Runfile) Path() string {
-	return r.absPath
-}
-
-// ExecutableRunfile represents a resolved executable runfile.
-type ExecutableRunfile struct {
-	Runfile
-}
-
-// Cmd returns an *exec.Cmd pre-configured to run this executable,
-// with the Bazel runfiles environment variables already propagated.
-func (e ExecutableRunfile) Cmd(args ...string) *exec.Cmd {
-	cmd := exec.Command(e.Path(), args...)
-	if env, err := runfiles.Env(); err == nil {
-		cmd.Env = append(os.Environ(), env...)
-	}
-	return cmd
-}
 
 var (
 	// DataFile is A dummy data file.
 	// Source: @@//:data/dummy.txt
-	DataFile Runfile
+	DataFile = runfile.New("_main/data/dummy.txt")
 
 	// HelperTool is A helper tool executable.
 	// Source: @@//:helper
-	HelperTool ExecutableRunfile
+	HelperTool = runfile.NewExecutable("_main/helper_/helper")
 
 )
-
-func init() {
-	reg, err := runfiles.New()
-	if err != nil {
-		panic(fmt.Sprintf("failed to initialize runfiles: %v", err))
-	}
-
-	DataFile = mustResolve(reg, "_main/data/dummy.txt")
-	HelperTool = mustResolveExecutable(reg, "_main/helper_/helper")
-}
-
-func mustResolve(reg *runfiles.Runfiles, rlocationPath string) Runfile {
-	absPath, err := reg.Rlocation(rlocationPath)
-	if err != nil {
-		panic(fmt.Sprintf("failed to resolve runfile %q: %v", rlocationPath, err))
-	}
-	return Runfile{absPath: absPath}
-}
-
-func mustResolveExecutable(reg *runfiles.Runfiles, rlocationPath string) ExecutableRunfile {
-	absPath, err := reg.Rlocation(rlocationPath)
-	if err != nil {
-		panic(fmt.Sprintf("failed to resolve executable runfile %q: %v", rlocationPath, err))
-	}
-	return ExecutableRunfile{Runfile{absPath: absPath}}
-}
 ```
 <!-- GENERATED_GO_END -->
 </details>

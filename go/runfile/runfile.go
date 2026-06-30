@@ -1,3 +1,9 @@
+// Package runfile provides type-safe, lazy-resolving access to Bazel runfiles.
+//
+// It defines unresolved descriptors (File, Executable) that can be resolved
+// to physical paths (ResolvedFile, ResolvedExecutable) at runtime. This
+// separates the fallible resolution step from the infallible path usage,
+// avoiding unexpected panics during program initialization.
 package runfile
 
 import (
@@ -9,23 +15,33 @@ import (
 	"github.com/bazelbuild/rules_go/go/runfiles"
 )
 
-var (
-	globalReg     *runfiles.Runfiles
-	globalRegOnce sync.Once
-	globalRegErr  error
-)
-
-func getRegistry() (*runfiles.Runfiles, error) {
-	globalRegOnce.Do(func() {
-		globalReg, globalRegErr = runfiles.New()
-	})
-	return globalReg, globalRegErr
+// Resolver defines the interface for looking up runfiles.
+// It is satisfied by the concrete *runfiles.Runfiles struct from rules_go.
+type Resolver interface {
+	Rlocation(path string) (string, error)
 }
 
-// SetRegistry allows overriding the global registry (useful for unit tests).
-func SetRegistry(reg *runfiles.Runfiles) {
-	globalRegOnce.Do(func() {
-		globalReg = reg
+var (
+	defaultResolver     Resolver
+	defaultResolverOnce sync.Once
+	defaultResolverErr  error
+)
+
+func getDefaultResolver() (Resolver, error) {
+	defaultResolverOnce.Do(func() {
+		// runfiles.New() returns (*runfiles.Runfiles, error).
+		// Since *runfiles.Runfiles implements Resolver, this assignment is valid.
+		var reg *runfiles.Runfiles
+		reg, defaultResolverErr = runfiles.New()
+		defaultResolver = reg
+	})
+	return defaultResolver, defaultResolverErr
+}
+
+// SetDefaultResolver overrides the default runfiles resolver (useful for unit tests).
+func SetDefaultResolver(resolver Resolver) {
+	defaultResolverOnce.Do(func() {
+		defaultResolver = resolver
 	})
 }
 
@@ -34,18 +50,18 @@ func SetRegistry(reg *runfiles.Runfiles) {
 // ---------------------------------------------------------------------------
 
 type resolveOpts struct {
-	reg *runfiles.Runfiles
+	resolver Resolver
 }
 
 // ResolveOption configures how a runfile is resolved.
 type ResolveOption func(*resolveOpts)
 
-// WithRegistry overrides the runfiles registry used for resolution.
-// Use this to inject a mock registry for testing or to use a custom-configured
-// registry instead of the auto-detected global one.
-func WithRegistry(reg *runfiles.Runfiles) ResolveOption {
+// WithResolver overrides the runfiles resolver used for resolution.
+// Use this to inject a mock resolver for testing or to use a custom-configured
+// resolver instead of the auto-detected default one.
+func WithResolver(resolver Resolver) ResolveOption {
 	return func(o *resolveOpts) {
-		o.reg = reg
+		o.resolver = resolver
 	}
 }
 
@@ -90,16 +106,16 @@ func (f File) Resolve(opts ...ResolveOption) (ResolvedFile, error) {
 		opt(&o)
 	}
 
-	reg := o.reg
-	if reg == nil {
+	resolver := o.resolver
+	if resolver == nil {
 		var err error
-		reg, err = getRegistry()
+		resolver, err = getDefaultResolver()
 		if err != nil {
-			return ResolvedFile{}, fmt.Errorf("runfiles registry initialization failed: %w", err)
+			return ResolvedFile{}, fmt.Errorf("default runfiles resolver initialization failed: %w", err)
 		}
 	}
 
-	path, err := reg.Rlocation(f.rlocation)
+	path, err := resolver.Rlocation(f.rlocation)
 	if err != nil {
 		return ResolvedFile{}, fmt.Errorf("failed to resolve runfile %q: %w", f.rlocation, err)
 	}
@@ -186,3 +202,4 @@ func (re ResolvedExecutable) Cmd(args ...string) *exec.Cmd {
 	}
 	return cmd
 }
+

@@ -96,17 +96,21 @@ import (
 
 func main() {
     // 1. Accessing a regular runfile:
-    // Use .Path() to get the resolved absolute path.
-    configPath := my_runfiles.ConfigJSON.Path()
-    content, err := os.ReadFile(configPath)
+    // Resolve the file safely (returns an error if missing).
+    configFile, err := my_runfiles.ConfigJSON.Resolve()
+    if err != nil {
+        log.Fatalf("Failed to resolve config: %v", err)
+    }
+    content, err := os.ReadFile(configFile.Path())
     if err != nil {
         log.Fatalf("Failed to read config: %v", err)
     }
     fmt.Printf("Config: %s\n", content)
 
     // 2. Running an executable runfile:
-    // Use .Cmd() to get a pre-configured *exec.Cmd with runfiles env vars.
-    cmd := my_runfiles.HelperTool.Cmd("--verbose", "run")
+    // Use MustResolve() for easy fail-fast access (panics if missing).
+    helper := my_runfiles.HelperTool.MustResolve()
+    cmd := helper.Cmd("--verbose", "run")
     cmd.Stdout = os.Stdout
     cmd.Stderr = os.Stderr
     if err := cmd.Run(); err != nil {

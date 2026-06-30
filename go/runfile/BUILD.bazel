@@ -1,4 +1,4 @@
-load("@rules_go//go:def.bzl", "go_library")
+load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "runfile",
@@ -7,5 +7,13 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "@rules_go//go/runfiles",
+    ],
+)
+
+go_test(
+    name = "runfile_test",
+    srcs = ["runfile_test.go"],
+    deps = [
+        ":runfile",
     ],
 )
