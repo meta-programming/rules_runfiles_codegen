@@ -33,7 +33,9 @@ jobs:
         path: |
           ~/.cache/bazel-disk
           ~/.cache/bazel-repo
-        key: bazel-cache-${{ runner.os }}-${{ hashFiles('**/MODULE.bazel', 'tools/go.sum') }}
+        # Use a unique key per run to force saving the updated cache,
+        # but restore the most recent cache for this OS.
+        key: bazel-cache-${{ runner.os }}-${{ github.run_id }}
         restore-keys: |
           bazel-cache-${{ runner.os }}-
 

@@ -108,7 +108,21 @@ During a release, all three released modules (`core`, `go`, `kotlin`) must share
     ```
     This uses the official Bazel AST parser to safely update the version in the core, go, and kotlin MODULE.bazel files at once, preserving formatting and comments.
 
+### Step 5: Publish a GitHub Release
+1. Navigate to the GitHub repository and create a new release.
+2. Set the **Tag** to `vX.Y.Z` (e.g., `v0.1.0`). The tag **must** start with `v`.
+3. Publish the release.
 
+This action triggers the `.github/workflows/release.yml` GitHub Actions workflow.
+
+### Step 6: Manually Open the BCR Pull Request
+Because the release workflow is configured to use a secure, fine-grained Personal Access Token (PAT) restricted to the maintainer's fork, it cannot automatically open pull requests on the upstream Bazel Central Registry.
+
+1. Wait for the **Release** GitHub Action to complete.
+2. Open the workflow run logs.
+3. Look for the output of the `Publish to BCR` step. It will print a URL to open a pull request.
+4. Copy-paste that URL into your browser.
+5. Review and submit the pull request to the upstream BCR.
 
 ---
 

@@ -1,0 +1,7 @@
+matrix:
+  platform: ["ubuntu2004", "macos", "windows"]
+tasks:
+  build_targets:
+    - "//..."
+  test_targets:
+    - "//..."
