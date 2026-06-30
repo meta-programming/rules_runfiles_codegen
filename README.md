@@ -289,6 +289,20 @@ fun main() {
 ```
 <!-- KOTLIN_USAGE_END -->
 
+### Coroutines & Blocking I/O
+
+The `resolve()` method and subsequent file/process operations (like `readText()` or `process.waitFor()`) are **blocking I/O operations**. If you are using this library inside a coroutine-based application (such as Ktor, Spring WebFlux, or Android), you should offload these calls to `Dispatchers.IO` to avoid blocking event loops or the main thread:
+
+```kotlin
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlin.io.path.readText
+
+suspend fun loadConfig(): String = withContext(Dispatchers.IO) {
+    Resources.configJson.resolve().path.readText()
+}
+```
+
 ### Actual Generated Kotlin Code
 
 <details>
