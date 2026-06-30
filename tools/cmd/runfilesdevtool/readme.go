@@ -89,7 +89,8 @@ func runUpdateReadme() error {
 		}
 
 		buildSnippet := extractSection(buildRaw, "quickstart")
-		installSnippet := fmt.Sprintf("# MODULE.bazel\nbazel_dep(name = \"rules_runfile_codegen_%s\", version = \"%s\")", lang.ID, version)
+		installSnippet := fmt.Sprintf(`# MODULE.bazel
+bazel_dep(name = "rules_runfile_codegen_%s", version = "%s")`, lang.ID, version)
 
 		type replacement struct {
 			startMarker string
