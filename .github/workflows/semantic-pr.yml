@@ -1,0 +1,29 @@
+# This workflow validates that pull request titles follow the [Conventional Commits specification](https://www.conventionalcommits.org/).
+# It ensures that squash-merged commits landing on the main branch maintain a clean, semantic history.
+name: "Semantic PR"
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronized
+
+permissions:
+  pull_requests: read
+
+jobs:
+  main:
+    name: Validate PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scopes: |
+            core
+            go
+            kotlin
+            engprod
+          requireScope: false
