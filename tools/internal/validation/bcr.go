@@ -77,7 +77,10 @@ func ValidatePresubmit(path string) error {
 	return nil
 }
 
-// MetadataTemplate represents the structure of metadata.template.json
+// MetadataTemplate represents the structure of metadata.template.json.
+// The schema format for module metadata in the Bazel Central Registry is defined by:
+// - Schema spec: https://github.com/bazelbuild/bazel-central-registry/blob/main/metadata.schema.json
+// - Bzlmod Registry doc: https://bazel.build/external/registry#metadata_file
 type MetadataTemplate struct {
 	Name           *string                 `json:"name"`
 	Homepage       *string                 `json:"homepage"`
