@@ -1,7 +1,7 @@
 // Package runfile provides type-safe access to Bazel runfiles.
 //
-// It defines unresolved specifications (FileSpec, ExecutableSpec) that
-// can be resolved to physical files (File, Executable) at runtime. This
+// It defines unresolved specifications ([FileSpec], [ExecutableSpec]) that
+// can be resolved to physical files ([File], [Executable]) at runtime. This
 // separates the fallible resolution step from the infallible path usage,
 // avoiding unexpected panics during program initialization.
 package runfile
@@ -16,7 +16,7 @@ import (
 )
 
 // Resolver defines the interface for looking up runfiles.
-// It is satisfied by the concrete *runfiles.Runfiles struct from rules_go.
+// It is satisfied by the concrete [*runfiles.Runfiles] struct from rules_go.
 type Resolver interface {
 	Rlocation(path string) (string, error)
 }
@@ -73,7 +73,7 @@ type FileSpec struct {
 	rlocation string
 }
 
-// NewSpec creates a new unresolved FileSpec reference.
+// NewSpec creates a new unresolved [FileSpec] reference.
 //
 // The rlocationpath argument must be a runfiles-root-relative path (rlocation path).
 //
@@ -86,12 +86,12 @@ type FileSpec struct {
 //     helper in BUILD files. It is globally unique within the runfiles tree and
 //     does not require runtime mapping. Note that under Bzlmod, the main repository
 //     is always assigned the fixed canonical name "_main" to decouple it from legacy
-//     workspace names (see https://bazel.build/external/migration).
+//     workspace names (see [Bazel Bzlmod Migration](https://bazel.build/external/migration)).
 //
 // For a detailed explanation of these concepts, see RUNFILES_CONCEPTS.md in this
 // repository, or refer to the official Bazel documentation:
-//   - https://bazel.build/extending/rules#runfiles_location
-//   - https://bazel.build/external/overview#apparent-repo-name
+//   - [Bazel Runfiles Location](https://bazel.build/extending/rules#runfiles_location)
+//   - [Bazel Apparent Repo Name](https://bazel.build/external/overview#apparent-repo-name)
 func NewSpec(rlocationpath string) FileSpec {
 	return FileSpec{rlocation: rlocationpath}
 }
@@ -100,17 +100,16 @@ func NewSpec(rlocationpath string) FileSpec {
 // (e.g., "my_project/data/config.json").
 //
 // This is the key used to look up the runfile in the runfiles manifest or directory.
-// For details on how Bazel structures these paths, see the Bazel Runfiles guide:
-// https://bazel.build/extending/rules#runfiles
+// For details on how Bazel structures these paths, see the [Bazel Runfiles Guide](https://bazel.build/extending/rules#runfiles).
 func (fs FileSpec) RlocationPath() string {
 	return fs.rlocation
 }
 
 // Resolve attempts to find the runfile on disk.
-// It returns a File if successful, or an error if the runfiles
+// It returns a [File] if successful, or an error if the runfiles
 // resolver could not be initialized or the file is missing.
 //
-// You can pass ResolveOptions to customize the resolution behavior (e.g.,
+// You can pass [ResolveOption] to customize the resolution behavior (e.g.,
 // supplying a custom resolver).
 func (fs FileSpec) Resolve(opts ...ResolveOption) (File, error) {
 	var o resolveOpts
@@ -134,7 +133,7 @@ func (fs FileSpec) Resolve(opts ...ResolveOption) (File, error) {
 	return File{rlocation: fs.rlocation, absPath: path}, nil
 }
 
-// MustResolve is like Resolve but panics if the runfile cannot be found.
+// MustResolve is like [FileSpec.Resolve] but panics if the runfile cannot be found.
 // Use this to fail-fast during initialization if the resource is mandatory.
 func (fs FileSpec) MustResolve(opts ...ResolveOption) File {
 	f, err := fs.Resolve(opts...)
@@ -149,13 +148,14 @@ type ExecutableSpec struct {
 	FileSpec
 }
 
-// NewExecutableSpec creates a new unresolved ExecutableSpec reference.
-// See NewSpec() for details on the rlocation argument format.
+// NewExecutableSpec creates a new unresolved [ExecutableSpec] reference.
+// See [NewSpec] for details on the rlocation argument format.
 func NewExecutableSpec(rlocation string) ExecutableSpec {
 	return ExecutableSpec{FileSpec: NewSpec(rlocation)}
 }
 
 // Resolve attempts to find the executable on disk.
+// It returns an [Executable] if successful.
 func (es ExecutableSpec) Resolve(opts ...ResolveOption) (Executable, error) {
 	f, err := es.FileSpec.Resolve(opts...)
 	if err != nil {
@@ -164,7 +164,7 @@ func (es ExecutableSpec) Resolve(opts ...ResolveOption) (Executable, error) {
 	return Executable{File: f}, nil
 }
 
-// MustResolve is like Resolve but panics if the executable cannot be found.
+// MustResolve is like [ExecutableSpec.Resolve] but panics if the executable cannot be found.
 func (es ExecutableSpec) MustResolve(opts ...ResolveOption) Executable {
 	e, err := es.Resolve(opts...)
 	if err != nil {
@@ -177,7 +177,7 @@ func (es ExecutableSpec) MustResolve(opts ...ResolveOption) Executable {
 // Resolved Types (Guaranteed to exist, cannot fail)
 // ---------------------------------------------------------------------------
 
-// File represents a runfile that has been successfully located on disk.
+// File represents a runfile that has been successfully located on disk (via [FileSpec.Resolve]).
 // Its methods are guaranteed not to fail.
 type File struct {
 	rlocation string
@@ -188,8 +188,7 @@ type File struct {
 // (e.g., "my_project/data/config.json").
 //
 // This is the key used to look up the runfile in the runfiles manifest or directory.
-// For details on how Bazel structures these paths, see the Bazel Runfiles guide:
-// https://bazel.build/extending/rules#runfiles
+// For details on how Bazel structures these paths, see the [Bazel Runfiles Guide](https://bazel.build/extending/rules#runfiles).
 func (f File) RlocationPath() string {
 	return f.rlocation
 }
@@ -202,12 +201,12 @@ func (f File) Path() string {
 	return f.absPath
 }
 
-// Executable represents an executable runfile successfully located on disk.
+// Executable represents an executable runfile successfully located on disk (via [ExecutableSpec.Resolve]).
 type Executable struct {
 	File
 }
 
-// Cmd returns an *exec.Cmd pre-configured to run this executable,
+// Cmd returns an [exec.Cmd] pre-configured to run this executable,
 // with Bazel runfiles environment variables already propagated.
 //
 // This method is guaranteed to succeed and does not return an error.
