@@ -81,9 +81,11 @@ tools/devtool [command]
 
 ### Updating the Documentation
 
-The **[README.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/README.md)** contains sections showing the "Actual Generated Code" for both Go and Kotlin. To ensure these snippets are 100% accurate and compiler-verified, they are automatically synchronized from the example outputs. The Stardoc documentation is also synchronized from the generated output.
+The repository contains two types of generated documentation that must be kept in sync:
+*   **[README.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/README.md)**: Contains embedded code snippets (quickstarts, usage examples, and actual generated code) that are synchronized from the example workspaces.
+*   **API Reference (Stardoc)**: The Stardoc markdown files (`go/docs/defs.md` and `kotlin/docs/defs.md`) are generated from the Starlark docstrings.
 
-If you make changes to the code generators or docstrings, you should update the documentation before committing.
+If you make changes to the code generators, examples, or Starlark docstrings, you must update the documentation before committing.
 
 Run the update-docs command from the repository root:
 ```bash
