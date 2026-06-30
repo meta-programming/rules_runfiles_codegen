@@ -56,31 +56,38 @@ fun interface Resolver {
             }
         }
 
-        private val systemResolver = object : Resolver {
-            override fun rlocation(path: RlocationPath): String? {
-                try {
-                    return runfiles.rlocation(path.value)
-                } catch (e: Exception) {
-                    throw RunfileResolutionException("Error resolving path ${path.value}", e)
-                }
-            }
+        /**
+         * Optional override resolver. If set, all resolution and env var requests
+         * will be delegated to this resolver instead of the system Bazel runfiles.
+         * Useful for mocking in unit tests.
+         */
+        @Volatile
+        var override: Resolver? = null
 
-            override val envVars: Map<String, String>
-                get() = try {
+        override fun rlocation(path: RlocationPath): String? {
+            val o = override
+            if (o != null) {
+                return o.rlocation(path)
+            }
+            try {
+                return runfiles.rlocation(path.value)
+            } catch (e: Exception) {
+                throw RunfileResolutionException("Error resolving path ${path.value}", e)
+            }
+        }
+
+        override val envVars: Map<String, String>
+            get() {
+                val o = override
+                if (o != null) {
+                    return o.envVars
+                }
+                return try {
                     runfiles.envVars
                 } catch (e: Exception) {
                     emptyMap()
                 }
-        }
-
-        /**
-         * The global resolver instance. Can be replaced with a mock in tests.
-         */
-        @Volatile
-        var global: Resolver = systemResolver
-
-        override fun rlocation(path: RlocationPath): String? = global.rlocation(path)
-        override val envVars: Map<String, String> get() = global.envVars
+            }
     }
 }
 

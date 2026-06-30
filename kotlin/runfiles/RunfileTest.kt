@@ -98,10 +98,10 @@ class RunfileTest {
         val mockEnv = mapOf("GLOBAL_VAR" to "global_val")
         val mockResolver = MockResolver(mapOf(rpath.value to absPath), mockEnv)
 
-        val oldGlobal = Resolver.Default.global
+        val oldOverride = Resolver.Default.override
 
         try {
-            Resolver.Default.global = mockResolver
+            Resolver.Default.override = mockResolver
 
             // Test FileSpec resolution using default resolver (which should now be our mock)
             val fileSpec = FileSpec(rpath)
@@ -117,7 +117,7 @@ class RunfileTest {
             assertEquals("global_val", pb.environment()["GLOBAL_VAR"])
 
         } finally {
-            Resolver.Default.global = oldGlobal
+            Resolver.Default.override = oldOverride
         }
     }
 
