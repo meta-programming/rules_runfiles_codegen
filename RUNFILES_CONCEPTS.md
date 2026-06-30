@@ -1,6 +1,6 @@
 # Bazel Runfiles Concepts and Semantics
 
-This document defines the core concepts, physical layout, and resolution semantics of Bazel **runfiles** (data-dependencies). This is a clarifying document for developers in this repository. It attempts to write up relevant Bazel runfiles concepts as they are used in this project.
+This document defines the core concepts, physical layout, and resolution semantics of Bazel **runfiles** (data-dependencies). This is a clarifying document for developers in this repository. It attempts to write up relevant Bazel runfiles concepts as they are officially documented by specifications and documents by the Bazel project (bazel.build).
 
 ---
 
