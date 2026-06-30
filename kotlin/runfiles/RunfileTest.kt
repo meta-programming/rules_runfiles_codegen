@@ -13,7 +13,7 @@ class RunfileTest {
     private class MockResolver(
         private val paths: Map<String, String>,
         override val envVars: Map<String, String> = emptyMap()
-    ) : Resolver, EnvProvider {
+    ) : Resolver {
         override fun rlocation(path: RlocationPath): String? = paths[path.value]
     }
 
@@ -71,6 +71,7 @@ class RunfileTest {
 
         assertEquals(rpath, executable.rlocationPath)
         assertEquals(absPath, executable.path)
+        assertEquals(mockEnv, executable.envVars)
 
         val pb = executable.processBuilder("arg1", "arg2")
         assertEquals(listOf(absPath, "arg1", "arg2"), pb.command())
@@ -97,12 +98,10 @@ class RunfileTest {
         val mockEnv = mapOf("GLOBAL_VAR" to "global_val")
         val mockResolver = MockResolver(mapOf(rpath.value to absPath), mockEnv)
 
-        val oldResolver = RunfileResolver.resolver
-        val oldEnv = RunfileResolver.envProvider
+        val oldGlobal = Resolver.Default.global
 
         try {
-            RunfileResolver.resolver = mockResolver
-            RunfileResolver.envProvider = mockResolver
+            Resolver.Default.global = mockResolver
 
             // Test FileSpec resolution using default resolver (which should now be our mock)
             val fileSpec = FileSpec(rpath)
@@ -113,12 +112,12 @@ class RunfileTest {
             val exeSpec = ExecutableSpec(rpath)
             val executable = exeSpec.resolve()
             assertEquals(absPath, executable.path)
+            assertEquals(mockEnv, executable.envVars)
             val pb = executable.processBuilder()
             assertEquals("global_val", pb.environment()["GLOBAL_VAR"])
 
         } finally {
-            RunfileResolver.resolver = oldResolver
-            RunfileResolver.envProvider = oldEnv
+            Resolver.Default.global = oldGlobal
         }
     }
 

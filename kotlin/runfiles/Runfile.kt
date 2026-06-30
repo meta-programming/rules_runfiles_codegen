@@ -1,8 +1,6 @@
 package com.github.metaprogramming.runfiles
 
-import com.google.devtools.build.runfiles.Runfiles
 import java.io.File as JFile
-import java.io.IOException
 import java.nio.file.Path as JPath
 import java.nio.file.Paths
 
@@ -23,65 +21,60 @@ value class RlocationPath(val value: String) {
 }
 
 /**
- * Interface for looking up runfiles.
+ * Interface for looking up runfiles and retrieving environment variables.
  */
 fun interface Resolver {
     /**
      * Resolves the given runfile path to an absolute path, or returns null if it cannot be found.
      */
     fun rlocation(path: RlocationPath): String?
-}
 
-/**
- * Interface for providing environment variables.
- */
-interface EnvProvider {
     /**
-     * Returns the environment variables that should be propagated to subprocesses.
+     * The environment variables to propagate to executables.
+     * Defaults to empty map.
      */
     val envVars: Map<String, String>
-}
+        get() = emptyMap()
 
-/**
- * Default runfiles resolver that wraps the official Bazel Java runfiles library.
- * Can be overridden for testing by modifying [resolver] and [envProvider].
- */
-object RunfileResolver : Resolver, EnvProvider {
-    private val runfiles: Runfiles by lazy {
-        try {
-            Runfiles.create()
-        } catch (e: IOException) {
-            throw RunfileResolutionException("Failed to initialize default Bazel Runfiles", e)
-        }
-    }
-
-    private val defaultResolver = Resolver { path ->
-        try {
-            runfiles.rlocation(path.value)
-        } catch (e: Exception) {
-            throw RunfileResolutionException("Error resolving path ${path.value}", e)
-        }
-    }
-
-    private val defaultEnvProvider = object : EnvProvider {
-        override val envVars: Map<String, String>
-            get() = try {
-                runfiles.envVars
-            } catch (e: Exception) {
-                emptyMap()
+    /**
+     * Default runfiles resolver that wraps the official Bazel Java runfiles library.
+     * Can be overridden globally for testing by modifying [global].
+     */
+    object Default : Resolver {
+        private val runfiles by lazy {
+            try {
+                com.google.devtools.build.runfiles.Runfiles.create()
+            } catch (e: java.io.IOException) {
+                throw RunfileResolutionException("Failed to initialize default Bazel Runfiles", e)
             }
+        }
+
+        private val systemResolver = object : Resolver {
+            override fun rlocation(path: RlocationPath): String? {
+                try {
+                    return runfiles.rlocation(path.value)
+                } catch (e: Exception) {
+                    throw RunfileResolutionException("Error resolving path ${path.value}", e)
+                }
+            }
+
+            override val envVars: Map<String, String>
+                get() = try {
+                    runfiles.envVars
+                } catch (e: Exception) {
+                    emptyMap()
+                }
+        }
+
+        /**
+         * The global resolver instance. Can be replaced with a mock in tests.
+         */
+        @Volatile
+        var global: Resolver = systemResolver
+
+        override fun rlocation(path: RlocationPath): String? = global.rlocation(path)
+        override val envVars: Map<String, String> get() = global.envVars
     }
-
-    @Volatile
-    var resolver: Resolver = defaultResolver
-
-    @Volatile
-    var envProvider: EnvProvider = defaultEnvProvider
-
-    override fun rlocation(path: RlocationPath): String? = resolver.rlocation(path)
-
-    override val envVars: Map<String, String>
-        get() = envProvider.envVars
 }
 
 /**
@@ -95,7 +88,7 @@ class FileSpec(val rlocationPath: RlocationPath) {
      * @return A resolved [File] if successful.
      * @throws RunfileResolutionException If the runfile cannot be resolved.
      */
-    fun resolve(resolver: Resolver = RunfileResolver): File {
+    fun resolve(resolver: Resolver = Resolver.Default): File {
         val resolvedPath = resolver.rlocation(rlocationPath)
             ?: throw RunfileResolutionException("Failed to resolve runfile: ${rlocationPath.value}")
         return File(rlocationPath, resolvedPath)
@@ -111,10 +104,9 @@ class ExecutableSpec(val rlocationPath: RlocationPath) {
     /**
      * Attempts to find the executable on disk.
      */
-    fun resolve(resolver: Resolver = RunfileResolver): Executable {
+    fun resolve(resolver: Resolver = Resolver.Default): Executable {
         val file = fileSpec.resolve(resolver)
-        val env = (resolver as? EnvProvider) ?: RunfileResolver
-        return Executable(file.rlocationPath, file.path, env)
+        return Executable(file.rlocationPath, file.path, resolver.envVars)
     }
 }
 
@@ -142,7 +134,7 @@ open class File internal constructor(
 class Executable internal constructor(
     rlocationPath: RlocationPath,
     path: String,
-    private val envProvider: EnvProvider = RunfileResolver
+    val envVars: Map<String, String>
 ) : File(rlocationPath, path) {
 
     /**
@@ -151,7 +143,7 @@ class Executable internal constructor(
      */
     fun processBuilder(vararg args: String): ProcessBuilder {
         return ProcessBuilder(path, *args).apply {
-            environment().putAll(envProvider.envVars)
+            environment().putAll(envVars)
         }
     }
 }
