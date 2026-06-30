@@ -75,19 +75,21 @@ def kt_jvm_runfile_library(name, package, entries, object_name = None, **kwargs)
     import com.example.project.runfiles.MyRunfiles
     import java.io.File
 
-    func main() {
+    fun main() {
         // 1. Accessing a regular runfile:
-        // Use .path to get the resolved absolute path as a String.
-        val configPath = MyRunfiles.configJson.path
+        // Resolve the spec to a File (throws exception on failure).
+        val configFile = MyRunfiles.configJson.resolve()
+        val configPath = configFile.path
         val content = File(configPath).readText()
         println("Content: $content")
 
-        // Or use .jvmPath to get it as a java.nio.file.Path
-        val configJvmPath = MyRunfiles.configJson.jvmPath
+        // Or use jvmPath on the resolved File
+        val configJvmPath = configFile.jvmPath
         
         // 2. Running an executable runfile:
-        // Use .processBuilder() to get a pre-configured ProcessBuilder with runfiles env vars.
-        val pb = MyRunfiles.helperTool.processBuilder("--verbose", "run")
+        // Resolve the spec to an Executable, then get the process builder.
+        val helper = MyRunfiles.helperTool.resolve()
+        val pb = helper.processBuilder("--verbose", "run")
         pb.inheritIO()
         val process = pb.start()
         val exitCode = process.waitFor()
@@ -164,7 +166,7 @@ def kt_jvm_runfile_library(name, package, entries, object_name = None, **kwargs)
         name = name,
         srcs = [":" + name + "_codegen"],  # Use the generator target directly
         deps = [
-            "@bazel_tools//tools/java/runfiles",
+            "@rules_runfile_codegen_kotlin//runfile",
         ] + user_deps,
         data = targets + user_data,
         **kwargs

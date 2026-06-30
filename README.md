@@ -273,13 +273,16 @@ import java.io.File
 
 fun main() {
     // 1. Access the resolved runfile path.
-    // Resources are resolved at startup (init-time).
-    val path = Resources.configJson.path
+    // Resolve the spec to a File.
+    val configFile = Resources.configJson.resolve()
+    val path = configFile.path
     val content = File(path).readText().trim()
     println("Data: $content")
 
     // 2. Run an executable runfile with env propagation.
-    val process = Resources.helperTool.processBuilder().start()
+    // Resolve the spec to an Executable.
+    val helper = Resources.helperTool.resolve()
+    val process = helper.processBuilder().start()
     val output = process.inputStream.bufferedReader().readText().trim()
     process.waitFor()
     println("Helper output: $output")
@@ -298,51 +301,22 @@ fun main() {
 // This file provides type-safe access to Bazel runfiles.
 package com.example.project.examples.resources
 
-import com.google.devtools.build.runfiles.Runfiles
+import com.github.metaprogramming.runfile.FileSpec
+import com.github.metaprogramming.runfile.ExecutableSpec
+import com.github.metaprogramming.runfile.RlocationPath
 
 object Resources {
-    private val _runfiles: Runfiles = try {
-        Runfiles.create()
-    } catch (e: java.io.IOException) {
-        throw java.lang.RuntimeException("Failed to create runfiles registry", e)
-    }
-
-    open class Runfile(val path: String) {
-        val jvmPath: java.nio.file.Path by lazy { java.nio.file.Paths.get(path) }
-    }
-
-    class ExecutableRunfile(path: String) : Runfile(path) {
-        fun processBuilder(vararg args: String): ProcessBuilder {
-            val pb = ProcessBuilder(path, *args)
-            pb.environment().putAll(Resources._runfiles.envVars)
-            return pb
-        }
-    }
-
-    private fun _mustResolve(rlocationPath: String): Runfile {
-        val absPath = _runfiles.rlocation(rlocationPath)
-            ?: throw java.lang.RuntimeException("Failed to resolve runfile: $rlocationPath")
-        return Runfile(absPath)
-    }
-
-    private fun _mustResolveExecutable(rlocationPath: String): ExecutableRunfile {
-        val absPath = _runfiles.rlocation(rlocationPath)
-            ?: throw java.lang.RuntimeException("Failed to resolve executable runfile: $rlocationPath")
-        return ExecutableRunfile(absPath)
-    }
-
     /**
      * A dummy data file.
      * Source: @@//:data/dummy.txt
      */
-    val configJson: Runfile = _mustResolve("_main/data/dummy.txt")
+    val configJson = FileSpec(RlocationPath("_main/data/dummy.txt"))
 
     /**
      * A helper tool executable.
      * Source: @@//:helper
      */
-    val helperTool: ExecutableRunfile = _mustResolveExecutable("_main/helper")
-
+    val helperTool = ExecutableSpec(RlocationPath("_main/helper"))
 }
 ```
 <!-- GENERATED_KOTLIN_END -->

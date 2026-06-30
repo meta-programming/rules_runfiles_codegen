@@ -6,14 +6,16 @@ import java.nio.file.Files
 
 fun main() {
     // Assertions
-    val configPath = TestResources.configJson.path
+    val configFile = TestResources.configJson.resolve()
+    val configPath = configFile.path
     println("Config path: $configPath")
     val configContent = File(configPath).readText().trim()
     if (configContent != "dummy content") {
         throw RuntimeException("Config content mismatch: got '$configContent', want 'dummy content'")
     }
 
-    val schemaPath = TestResources.externalFile.jvmPath
+    val externalFile = TestResources.externalFile.resolve()
+    val schemaPath = externalFile.jvmPath
     println("Schema path: $schemaPath")
     val schemaContent = Files.readString(schemaPath).trim()
     if (schemaContent.isEmpty()) {
@@ -26,7 +28,8 @@ fun main() {
     }
 
     // Executable test
-    val process = TestResources.helperTool.processBuilder().start()
+    val helper = TestResources.helperTool.resolve()
+    val process = helper.processBuilder().start()
     val stdout = process.inputStream.bufferedReader().readText().trim()
     val stderr = process.errorStream.bufferedReader().readText().trim()
     val exitCode = process.waitFor()
