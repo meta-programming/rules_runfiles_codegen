@@ -1,3 +1,10 @@
+/**
+ * Package com.github.metaprogramming.runfiles provides type-safe, explicit (non-eager) resolution of Bazel runfiles.
+ *
+ * This library is the runtime companion for the [rules_runfiles_codegen](https://github.com/meta-programming/rules_runfiles_codegen)
+ * Bazel rules. The code generator emits structures that utilize the types in this package (such as [FileSpec]
+ * and [ExecutableSpec]) to allow users to safely resolve runfiles at runtime.
+ */
 package com.github.metaprogramming.runfiles
 
 import java.io.File as JFile
