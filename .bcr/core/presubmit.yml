@@ -4,5 +4,6 @@ tasks:
   verify_targets:
     name: "Verify Core targets"
     platform: ${{ platform }}
+    bazel: 7.x
     build_targets:
       - "@rules_runfile_codegen_core//..."

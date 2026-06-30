@@ -9,9 +9,13 @@ import (
 )
 
 // Task represents a task in presubmit.yml
+// Task represents a task in presubmit.yml.
+// Its structure is defined and parsed by the Bazel CI system's bazelci.py script.
+// See: https://github.com/bazelbuild/continuous-integration/blob/master/buildkite/bazelci.py
 type Task struct {
 	Name         string   `yaml:"name"`
 	Platform     string   `yaml:"platform"`
+	Bazel        string   `yaml:"bazel"`
 	BuildTargets []string `yaml:"build_targets"`
 	TestTargets  []string `yaml:"test_targets"`
 }
@@ -23,6 +27,9 @@ type PresubmitConfig struct {
 }
 
 // ValidatePresubmit validates the presubmit.yml file.
+// It verifies that the config matches the expected Bazel CI structure to prevent
+// failures during the Buildkite pipeline generation phase (bcr_presubmit.py).
+// See: https://github.com/bazelbuild/continuous-integration/blob/master/buildkite/bazel-central-registry/bcr_presubmit.py
 func ValidatePresubmit(path string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -58,6 +65,9 @@ func ValidatePresubmit(path string) error {
 	for taskName, task := range config.Tasks {
 		if task.Platform == "" {
 			return fmt.Errorf("task %q: missing 'platform'", taskName)
+		}
+		if task.Bazel == "" {
+			return fmt.Errorf("task %q: missing 'bazel' version", taskName)
 		}
 		if len(task.BuildTargets) == 0 && len(task.TestTargets) == 0 {
 			return fmt.Errorf("task %q: must have at least one of 'build_targets' or 'test_targets'", taskName)

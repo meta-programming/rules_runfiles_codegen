@@ -4,6 +4,7 @@ tasks:
   verify_targets:
     name: "Verify Kotlin targets"
     platform: ${{ platform }}
+    bazel: 7.x
     build_targets:
       - "@rules_runfile_codegen_kotlin//:defs_bzl"
       - "@rules_runfile_codegen_kotlin//runfiles:runfiles"
