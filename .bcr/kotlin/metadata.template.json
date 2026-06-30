@@ -1,4 +1,5 @@
 {
+  "name": "rules_runfile_codegen_kotlin",
   "homepage": "https://github.com/meta-programming/rules_runfiles_codegen",
   "maintainers": [
     {
