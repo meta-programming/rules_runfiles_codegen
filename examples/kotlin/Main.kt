@@ -9,9 +9,8 @@ fun main() {
     println("Data: $content")
 
     // 2. Run an executable runfile with env propagation.
-    val helper = Resources.helperTool.resolve()
-    val process = helper.processBuilder().start()
-    val output = process.inputStream.bufferedReader().readText().trim()
-    process.waitFor()
+    // Resolve, start, and read the output in a fluent chain.
+    val output = Resources.helperTool.resolve().processBuilder().start()
+        .inputStream.reader().readText().trim()
     println("Helper output: $output")
 }

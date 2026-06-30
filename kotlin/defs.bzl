@@ -84,12 +84,12 @@ def kt_jvm_runfile_library(name, package, entries, object_name = None, **kwargs)
         val configJvmPath = MyRunfiles.configJson.resolve().jvmPath
         
         // 2. Running an executable runfile:
-        // Resolve the spec to an Executable, then get the process builder.
-        val helper = MyRunfiles.helperTool.resolve()
-        val pb = helper.processBuilder("--verbose", "run")
-        pb.inheritIO()
-        val process = pb.start()
-        val exitCode = process.waitFor()
+        // Resolve, configure, start, and wait for the process in a fluent chain.
+        val exitCode = MyRunfiles.helperTool.resolve()
+            .processBuilder("--verbose", "run")
+            .inheritIO()
+            .start()
+            .waitFor()
         if (exitCode != 0) {
             error("Helper tool failed with exit code $exitCode")
         }
