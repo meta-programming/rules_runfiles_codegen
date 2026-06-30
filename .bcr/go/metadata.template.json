@@ -9,5 +9,7 @@
   ],
   "repository": [
     "github:meta-programming/rules_runfiles_codegen"
-  ]
+  ],
+  "versions": [],
+  "yanked_versions": {}
 }
