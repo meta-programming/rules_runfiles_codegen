@@ -87,7 +87,7 @@ object RunfileResolver : Resolver, EnvProvider {
 /**
  * Represents an unresolved runfile specification.
  */
-open class FileSpec(val rlocationPath: RlocationPath) {
+class FileSpec(val rlocationPath: RlocationPath) {
     /**
      * Attempts to find the runfile on disk.
      *
@@ -95,7 +95,7 @@ open class FileSpec(val rlocationPath: RlocationPath) {
      * @return A resolved [File] if successful.
      * @throws RunfileResolutionException If the runfile cannot be resolved.
      */
-    open fun resolve(resolver: Resolver = RunfileResolver): File {
+    fun resolve(resolver: Resolver = RunfileResolver): File {
         val resolvedPath = resolver.rlocation(rlocationPath.value)
             ?: throw RunfileResolutionException("Failed to resolve runfile: ${rlocationPath.value}")
         return File(rlocationPath, resolvedPath)
@@ -105,12 +105,14 @@ open class FileSpec(val rlocationPath: RlocationPath) {
 /**
  * Represents an unresolved executable runfile specification.
  */
-class ExecutableSpec(rlocationPath: RlocationPath) : FileSpec(rlocationPath) {
+class ExecutableSpec(val rlocationPath: RlocationPath) {
+    private val fileSpec = FileSpec(rlocationPath)
+
     /**
      * Attempts to find the executable on disk.
      */
-    override fun resolve(resolver: Resolver): Executable {
-        val file = super.resolve(resolver)
+    fun resolve(resolver: Resolver = RunfileResolver): Executable {
+        val file = fileSpec.resolve(resolver)
         val env = (resolver as? EnvProvider) ?: RunfileResolver
         return Executable(file.rlocationPath, file.path, env)
     }
