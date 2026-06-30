@@ -1,14 +1,6 @@
-/**
- * Package com.github.metaprogramming.runfiles provides type-safe, explicit (non-eager) resolution of Bazel runfiles.
- *
- * This library is the runtime companion for the [rules_runfiles_codegen](https://github.com/meta-programming/rules_runfiles_codegen)
- * Bazel rules. The code generator emits structures that utilize the types in this package (such as [FileSpec]
- * and [ExecutableSpec]) to allow users to safely resolve runfiles at runtime.
- */
 package com.github.metaprogramming.runfiles
 
-import java.io.File as JFile
-import java.nio.file.Path as JPath
+import java.nio.file.Path
 import java.nio.file.Paths
 
 /**
@@ -87,7 +79,7 @@ class FileSpec(val rlocationPath: RlocationPath) {
     fun resolve(resolver: Resolver = Resolver.Default): File {
         val resolvedPath = resolver.rlocation(rlocationPath)
             ?: throw RunfileResolutionException("Failed to resolve runfile: ${rlocationPath.value}")
-        return File(rlocationPath, resolvedPath)
+        return File(rlocationPath, Paths.get(resolvedPath))
     }
 }
 
@@ -111,25 +103,15 @@ class ExecutableSpec(val rlocationPath: RlocationPath) {
  */
 open class File internal constructor(
     val rlocationPath: RlocationPath,
-    val path: String
-) {
-    /**
-     * The physical path to the runfile as a [JPath].
-     */
-    val jvmPath: JPath by lazy { Paths.get(path) }
-
-    /**
-     * The physical path to the runfile as a [JFile].
-     */
-    val file: JFile by lazy { JFile(path) }
-}
+    val path: Path
+)
 
 /**
  * Represents an executable runfile successfully located on disk.
  */
 class Executable internal constructor(
     rlocationPath: RlocationPath,
-    path: String,
+    path: Path,
     val envVars: Map<String, String>
 ) : File(rlocationPath, path) {
 
@@ -138,7 +120,7 @@ class Executable internal constructor(
      * with Bazel runfiles environment variables already propagated.
      */
     fun processBuilder(vararg args: String): ProcessBuilder {
-        return ProcessBuilder(path, *args).apply {
+        return ProcessBuilder(path.toString(), *args).apply {
             environment().putAll(envVars)
         }
     }

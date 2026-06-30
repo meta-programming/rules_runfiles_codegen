@@ -58,15 +58,16 @@ In your `Main.kt`:
 package com.example.project
 
 import com.example.project.runfiles.MyRunfiles
+import kotlin.io.path.readText
 
 fun main() {
     // 1. Accessing a regular runfile:
-    // Resolve the spec and read its content directly.
-    val content = MyRunfiles.configJson.resolve().file.readText()
+    // Resolve the spec and read its content directly using Path.readText().
+    val content = MyRunfiles.configJson.resolve().path.readText()
     println("Content: $content")
 
-    // Or use jvmPath by resolving the spec first
-    val configJvmPath = MyRunfiles.configJson.resolve().jvmPath
+    // The resolved path is a java.nio.file.Path
+    val path = MyRunfiles.configJson.resolve().path
 
     // 2. Running an executable runfile:
     // Resolve, configure, start, and wait for the process in a fluent chain.

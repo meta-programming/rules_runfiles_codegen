@@ -5,7 +5,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File as JFile
 import java.nio.file.Paths
 
 class RunfileTest {
@@ -42,9 +41,7 @@ class RunfileTest {
         val file = spec.resolve(mockResolver)
 
         assertEquals(rpath, file.rlocationPath)
-        assertEquals(absPath, file.path)
-        assertEquals(Paths.get(absPath), file.jvmPath)
-        assertEquals(JFile(absPath), file.file)
+        assertEquals(Paths.get(absPath), file.path)
     }
 
     @Test
@@ -70,7 +67,7 @@ class RunfileTest {
         val executable = spec.resolve(mockResolver)
 
         assertEquals(rpath, executable.rlocationPath)
-        assertEquals(absPath, executable.path)
+        assertEquals(Paths.get(absPath), executable.path)
         assertEquals(mockEnv, executable.envVars)
 
         val pb = executable.processBuilder("arg1", "arg2")
@@ -91,8 +88,6 @@ class RunfileTest {
         assertTrue(exception.message!!.contains("Failed to resolve runfile: bin/tool"))
     }
 
-
-
     @Test
     fun testDefaultResolverSuccess() {
         // Since we are running under Bazel, the default resolver should be able to resolve
@@ -101,6 +96,6 @@ class RunfileTest {
         val spec = FileSpec(RlocationPath("rules_runfile_codegen_kotlin/runfiles/Runfile.kt"))
         val file = spec.resolve()
         assertNotNull(file.path)
-        assertTrue(file.file.exists())
+        assertTrue(file.path.toFile().exists())
     }
 }
