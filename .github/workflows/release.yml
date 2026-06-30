@@ -11,7 +11,36 @@ on:
         type: string
 
 jobs:
+  package-assets:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get Version
+        id: get_version
+        run: |
+          TAG="${{ github.event.release.tag_name || inputs.tag_name }}"
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Package Release Archive
+        run: |
+          TAG="${{ steps.get_version.outputs.tag }}"
+          VERSION="${{ steps.get_version.outputs.version }}"
+          # Create a stable tarball of the repository
+          git archive --format=tar.gz --prefix=rules_runfiles_codegen-$VERSION/ -o rules_runfiles_codegen-$VERSION.tar.gz HEAD
+
+      - name: Upload Release Asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ steps.get_version.outputs.tag }}" "rules_runfiles_codegen-${{ steps.get_version.outputs.version }}.tar.gz"
+
   publish-bcr:
+    needs: package-assets
     permissions:
       contents: write
       id-token: write
