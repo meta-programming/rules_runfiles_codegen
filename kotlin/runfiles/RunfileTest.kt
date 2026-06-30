@@ -91,35 +91,7 @@ class RunfileTest {
         assertTrue(exception.message!!.contains("Failed to resolve runfile: bin/tool"))
     }
 
-    @Test
-    fun testGlobalResolverOverriding() {
-        val rpath = RlocationPath("global/file.txt")
-        val absPath = "/absolute/global/file.txt"
-        val mockEnv = mapOf("GLOBAL_VAR" to "global_val")
-        val mockResolver = MockResolver(mapOf(rpath.value to absPath), mockEnv)
 
-        val oldOverride = Resolver.Default.override
-
-        try {
-            Resolver.Default.override = mockResolver
-
-            // Test FileSpec resolution using default resolver (which should now be our mock)
-            val fileSpec = FileSpec(rpath)
-            val file = fileSpec.resolve()
-            assertEquals(absPath, file.path)
-
-            // Test ExecutableSpec resolution using default resolver
-            val exeSpec = ExecutableSpec(rpath)
-            val executable = exeSpec.resolve()
-            assertEquals(absPath, executable.path)
-            assertEquals(mockEnv, executable.envVars)
-            val pb = executable.processBuilder()
-            assertEquals("global_val", pb.environment()["GLOBAL_VAR"])
-
-        } finally {
-            Resolver.Default.override = oldOverride
-        }
-    }
 
     @Test
     fun testDefaultResolverSuccess() {

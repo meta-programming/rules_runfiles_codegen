@@ -56,19 +56,7 @@ fun interface Resolver {
             }
         }
 
-        /**
-         * Optional override resolver. If set, all resolution and env var requests
-         * will be delegated to this resolver instead of the system Bazel runfiles.
-         * Useful for mocking in unit tests.
-         */
-        @Volatile
-        var override: Resolver? = null
-
         override fun rlocation(path: RlocationPath): String? {
-            val o = override
-            if (o != null) {
-                return o.rlocation(path)
-            }
             try {
                 return runfiles.rlocation(path.value)
             } catch (e: Exception) {
@@ -77,16 +65,10 @@ fun interface Resolver {
         }
 
         override val envVars: Map<String, String>
-            get() {
-                val o = override
-                if (o != null) {
-                    return o.envVars
-                }
-                return try {
-                    runfiles.envVars
-                } catch (e: Exception) {
-                    emptyMap()
-                }
+            get() = try {
+                runfiles.envVars
+            } catch (e: Exception) {
+                emptyMap()
             }
     }
 }
