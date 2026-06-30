@@ -4,5 +4,4 @@ scratch_test/
 *.user
 
 # Go binaries
-tools/runfilesdevtool
 tools/cmd/devtool/devtool
