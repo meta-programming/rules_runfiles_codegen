@@ -28,7 +28,7 @@ To use these rules in your Go project, add the following to your `MODULE.bazel` 
 <!-- GO_INSTALL_START -->
 ```bazel
 # MODULE.bazel
-bazel_dep(name = "rules_runfile_codegen_go", version = "0.0.0")
+bazel_dep(name = "rules_runfile_codegen_go", version = "0.1.0")
 ```
 <!-- GO_INSTALL_END -->
 
@@ -235,7 +235,7 @@ To use these rules in your Kotlin project, add the following to your `MODULE.baz
 <!-- KOTLIN_INSTALL_START -->
 ```bazel
 # MODULE.bazel
-bazel_dep(name = "rules_runfile_codegen_kotlin", version = "0.0.0")
+bazel_dep(name = "rules_runfile_codegen_kotlin", version = "0.1.0")
 ```
 <!-- KOTLIN_INSTALL_END -->
 
