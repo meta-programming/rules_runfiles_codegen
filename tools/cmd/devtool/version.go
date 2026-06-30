@@ -68,11 +68,31 @@ func runVersionCheck() error {
 		}
 	}
 
+	// Check that transitive dependencies on our own modules match the expected version
+	expectedVer := firstVer
+	for _, mod := range modules {
+		if mod == "core" {
+			continue // core doesn't depend on others
+		}
+		path := filepath.Join(resolvedRoot, mod, "MODULE.bazel")
+		deps, err := parseModuleDeps(path)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s dependencies: %w", mod, err)
+		}
+
+		for depName, depVer := range deps {
+			if depVer != expectedVer {
+				fmt.Fprintf(os.Stderr, "mismatch: %s depends on %s version %s, but expected %s\n", mod, depName, depVer, expectedVer)
+				mismatch = true
+			}
+		}
+	}
+
 	if mismatch {
 		return fmt.Errorf("version mismatch detected")
 	}
 
-	fmt.Println("Core, go, and kotlin module versions are consistent.")
+	fmt.Println("Core, go, and kotlin module versions and dependencies are consistent.")
 	return nil
 }
 

@@ -73,3 +73,12 @@ func updateModuleVersion(path string, newVersion string) error {
 	}
 	return os.WriteFile(path, newContent, 0644)
 }
+
+// parseModuleDeps extracts the versions of our own dependencies from a MODULE.bazel file.
+func parseModuleDeps(path string) (map[string]string, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	return version.ParseDeps(content)
+}

@@ -105,3 +105,49 @@ func Update(content []byte, newVersion string) ([]byte, error) {
 	}
 	return build.Format(ast), nil
 }
+
+// ParseDeps extracts the versions of any bazel_dep declarations pointing to rules_runfile_codegen_* modules.
+func ParseDeps(content []byte) (map[string]string, error) {
+	ast, err := build.ParseModule("MODULE.bazel", content)
+	if err != nil {
+		return nil, err
+	}
+	deps := make(map[string]string)
+	for _, stmt := range ast.Stmt {
+		call, ok := stmt.(*build.CallExpr)
+		if !ok {
+			continue
+		}
+		ident, ok := call.X.(*build.Ident)
+		if !ok || ident.Name != "bazel_dep" {
+			continue
+		}
+
+		var name, ver string
+		for _, arg := range call.List {
+			assign, ok := arg.(*build.AssignExpr)
+			if !ok {
+				continue
+			}
+			key, ok := assign.LHS.(*build.Ident)
+			if !ok {
+				continue
+			}
+			if key.Name == "name" {
+				strExpr, ok := assign.RHS.(*build.StringExpr)
+				if ok && strings.HasPrefix(strExpr.Value, "rules_runfile_codegen_") {
+					name = strExpr.Value
+				}
+			} else if key.Name == "version" {
+				strExpr, ok := assign.RHS.(*build.StringExpr)
+				if ok {
+					ver = strExpr.Value
+				}
+			}
+		}
+		if name != "" && ver != "" {
+			deps[name] = ver
+		}
+	}
+	return deps, nil
+}
