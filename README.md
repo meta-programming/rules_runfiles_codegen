@@ -13,7 +13,7 @@ For complete, runnable projects demonstrating these quickstarts, see the [exampl
 ## Key Features
 
 *   **Type-Safety**: Runfiles are exposed as generated constants/properties. No more stringly-typed paths.
-*   **Flexible Resolution**: Runfiles can be resolved eagerly or lazily depending on language idioms. In Go, we use a lazy, explicit model (`Resolve()`) to avoid package `init()` side-effects and improve testability, while Kotlin resolves eagerly at startup to ensure **fail-at-startup** safety.
+*   **Explicit (Non-Eager) Resolution**: We are evolving the library towards an explicit, non-eager resolution model to avoid startup side-effects and improve testability. Go is the first to adopt this design (using `Resolve()`), while Kotlin currently still resolves eagerly at startup but will be transitioned in a future release.
 *   **Subprocess Environment Propagation**: Executable runfiles are wrapped in rich objects that facilitate launching them as subprocesses while automatically propagating the Bazel runfiles environment. This ensures that child processes can also resolve their own runfiles.[^1]
 *   **Zero Runtime Overhead**: After successful startup-time resolution, accessing the runfile path is a simple member access with zero overhead.
 
@@ -352,11 +352,12 @@ object Resources {
 
 ## Design Philosophy
 
-### Resolution Strategy: Eager vs. Lazy
-We support both eager and lazy resolution strategies, tailored to the idioms and best practices of each language:
+### Evolution Towards Non-Eager (Explicit) Resolution
+We are actively evolving the library away from eager resolution at startup towards an **explicit, non-eager (lazy)** model.
 
-*   **Go (Lazy/Explicit)**: Go libraries use a **lazy, explicit** resolution model. The generated code defines unresolved `FileSpec` and `ExecutableSpec` symbols. The developer must explicitly call `.Resolve()` (which returns an error) or `.MustResolve()` (which panics) to locate the file on disk. This avoids dangerous side-effects in package `init()` blocks, improves testability (allowing mocks to be injected before resolution), and adheres to Go best practices.
-*   **Kotlin (Eager)**: Kotlin libraries use an **eager** resolution model. Runfiles are resolved during the initialization of the generated `Resources` object. If a runfile is missing, it throws a `RuntimeException` immediately. This ensures **fail-fast** safety, guaranteeing that a binary with missing dependencies will fail at startup rather than hours into a deployment.
+*   **Why the shift?** Eager resolution (resolving everything during module initialization or `init` blocks) can cause dangerous side-effects, makes unit testing and mocking difficult, and violates best practices in many languages (especially Go).
+*   **Go (Modern)**: Uses the new explicit model. The generated code defines unresolved `FileSpec` and `ExecutableSpec` symbols. The developer must explicitly call `.Resolve()` or `.MustResolve()` at runtime. This avoids `init()` panics and allows injecting mock resolvers for testing.
+*   **Kotlin (Legacy/Transitioning)**: Currently still uses the older eager model (resolving during `Resources` object initialization). We plan to transition Kotlin and other future languages to the explicit model in upcoming releases to ensure consistency and safety.
 
 ### Rich Object Wrapper
 Rather than just returning raw string paths, the generators wrap runfiles in rich objects (`Runfile` and `ExecutableRunfile`).
