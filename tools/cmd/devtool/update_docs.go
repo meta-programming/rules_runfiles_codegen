@@ -32,29 +32,6 @@ var updateDocsCmd = &cobra.Command{
 }
 
 func runUpdateDocs() error {
-	if buildExamples {
-		for _, lang := range languages {
-			var targets []string
-			if updateReadmeFlag {
-				targets = append(targets, "//...")
-			}
-			if updateStardocFlag {
-				targets = append(targets, fmt.Sprintf("@rules_runfile_codegen_%s//docs:defs_doc", lang.ID))
-			}
-			if len(targets) > 0 {
-				fmt.Printf("Building targets for %s...\n", lang.ID)
-				args := append([]string{"build"}, targets...)
-				cmd := exec.Command("bazel", args...)
-				cmd.Dir = filepath.Join(resolvedRoot, "examples", lang.ID)
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
-				if err := cmd.Run(); err != nil {
-					return fmt.Errorf("failed to build targets for %s: %w", lang.ID, err)
-				}
-			}
-		}
-	}
-
 	if updateReadmeFlag {
 		if err := updateReadme(); err != nil {
 			return fmt.Errorf("failed to update README: %w", err)
@@ -92,6 +69,17 @@ func updateReadme() error {
 	}
 
 	for _, lang := range languages {
+		if buildExamples {
+			fmt.Printf("Building examples for %s...\n", lang.ID)
+			cmd := exec.Command("bazel", "build", "//...")
+			cmd.Dir = filepath.Join(resolvedRoot, "examples", lang.ID)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return fmt.Errorf("failed to build examples for %s: %w", lang.ID, err)
+			}
+		}
+
 		buildPath := filepath.Join(resolvedRoot, "examples", lang.ID, "BUILD.bazel")
 		usagePath := filepath.Join(resolvedRoot, "examples", lang.ID, lang.UsageFile)
 		genPath := filepath.Join(resolvedRoot, "examples", lang.ID, lang.GenFile)
@@ -146,7 +134,18 @@ bazel_dep(name = "rules_runfile_codegen_%s", version = "%s")`, lang.ID, version)
 
 func updateStardoc() error {
 	for _, lang := range languages {
-		genPath := filepath.Join(resolvedRoot, "examples", lang.ID, "bazel-bin", "external", fmt.Sprintf("rules_runfile_codegen_%s+", lang.ID), "docs", "defs.md.gen")
+		if buildExamples {
+			fmt.Printf("Building Stardoc for %s...\n", lang.ID)
+			cmd := exec.Command("bazel", "build", "//docs:defs_doc")
+			cmd.Dir = filepath.Join(resolvedRoot, lang.ID)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return fmt.Errorf("failed to build stardoc for %s: %w", lang.ID, err)
+			}
+		}
+
+		genPath := filepath.Join(resolvedRoot, lang.ID, "bazel-bin", "docs", "defs.md.gen")
 		destPath := filepath.Join(resolvedRoot, lang.ID, "docs", "defs.md")
 
 		content, err := os.ReadFile(genPath)
