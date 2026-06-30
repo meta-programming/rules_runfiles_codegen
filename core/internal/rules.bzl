@@ -1,8 +1,8 @@
 # Core rule definition for rules_runfile_codegen.
 
 load("//internal:analyzer.bzl", "analyze_entries")
-load("//internal:emitters/go.bzl", "emit_go")
-load("//internal:emitters/kotlin.bzl", "emit_kotlin")
+load("//internal/emitters:go.bzl", "emit_go")
+load("//internal/emitters:kotlin.bzl", "emit_kotlin")
 
 def _runfile_codegen_impl(ctx):
     language = ctx.attr.language

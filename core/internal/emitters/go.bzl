@@ -1,6 +1,6 @@
 # Go code emitter for rules_runfile_codegen.
-load("//internal:emitters/template.bzl", "render")
-load("//internal:emitters/utils.bzl", "escape_go_string")
+load("//internal/emitters:template.bzl", "render")
+load("//internal/emitters:utils.bzl", "escape_go_string")
 
 def _header_part(package_name, extra_imports):
     return render(

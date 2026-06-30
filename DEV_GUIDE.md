@@ -70,27 +70,95 @@ bazel test //...
 
 ---
 
-## Updating the Documentation (README.md)
+## Developer Tools (`devtool`)
 
-The **[README.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/README.md)** contains sections showing the "Actual Generated Code" for both Go and Kotlin. To ensure these snippets are 100% accurate and compiler-verified, they are automatically synchronized from the integration test outputs.
+The project includes a unified developer tool to assist with common tasks like updating documentation and managing module versions. A wrapper script is provided at `tools/devtool` so you can run it easily from anywhere in the repository.
 
-If you make changes to the code generators, you should update the README before committing:
+To run the tool, use the wrapper script from the repository root:
+```bash
+tools/devtool [command]
+```
 
-1.  **Generate the latest outputs** by running the integration tests (this ensures the generated files exist in the `bazel-bin` directories):
+### Updating the Documentation
+
+The repository contains two types of generated documentation that must be kept in sync:
+*   **[README.md](README.md)**: Contains embedded code snippets (quickstarts, usage examples, and actual generated code) that are synchronized from the example workspaces.
+*   **API Reference (Stardoc)**: The Stardoc markdown files (`go/docs/defs.md` and `kotlin/docs/defs.md`) are generated from the Starlark docstrings.
+
+If you make changes to the code generators, examples, or Starlark docstrings, you must update the documentation before committing.
+
+Run the update-docs command from the repository root:
+```bash
+tools/devtool update-docs
+```
+This will automatically build the examples and stardoc targets for all languages to generate the latest outputs, read them, and inject them into the README and docs directories.
+
+### Managing Module Versions
+
+During a release, all three released modules (`core`, `go`, `kotlin`) must share the exact same version.
+
+*   **Check version consistency**:
     ```bash
-    # From the repo root:
-    (cd tests/go && bazel build //...)
-    (cd tests/kotlin && bazel build //...)
+    tools/devtool version check
     ```
-2.  **Run the synchronization script** from the repository root:
+    This verifies that the core, go, and kotlin modules have matching versions.
+*   **Set a new version**:
     ```bash
-    go run tools/update_readme.go
+    tools/devtool version set 0.2.0
     ```
-    This script will read the generated files from the `bazel-bin` directories and inject them into the README between the `<!-- GENERATED_..._START -->` and `<!-- GENERATED_..._END -->` markers.
-3.  **Commit the updated README.md**.
+    This uses the official Bazel AST parser to safely update the version in the core, go, and kotlin MODULE.bazel files at once, preserving formatting and comments.
+
+
+
+---
+
+## Adding Support for a New Language
+
+To add support for a new language (e.g., Python, C++), you must follow the multi-module structure established in this project. Each language is published as a separate Bazel module to keep dependencies minimal for users.
+
+Follow these steps to implement and integrate a new language:
+
+### 1. Implement the Rules and Generator
+
+1.  **Create the module directory**: Create a new directory at the root (e.g., `repo/python/`).
+2.  **Implement the Starlark Emitter**: In the core module (`repo/core/internal/emitters/<lang>.bzl`), write a Starlark function that takes the analyzed runfiles and generates the source code string for the target language.
+3.  **Update the Core Rule**: Modify `repo/core/internal/rules.bzl` to load your new emitter and support the new language in the `runfile_codegen` rule.
+4.  **Define the Public API**: In `repo/<lang>/defs.bzl`, define the public macros that developers will use (e.g., `<lang_prefix>_runfile_library`). This macro should wrap the core `runfile_codegen` rule and the target language's native library rule.
+5.  **Create the MODULE.bazel**: Define the module in `repo/<lang>/MODULE.bazel`. It must depend on `rules_runfile_codegen_core`.
+
+### 2. Create an Example Workspace
+
+Create a standalone Bazel workspace in `repo/examples/<lang>/` to demonstrate usage and provide source material for the documentation.
+
+1.  **Configure Bzlmod**: Use `local_path_override` in `examples/<lang>/MODULE.bazel` to point to your local `<lang>/` and `core/` modules (see the local development setup section above).
+2.  **Create a usage example**: Write a simple program that uses the generated library.
+3.  **Annotate the BUILD.bazel**: In `examples/<lang>/BUILD.bazel`, wrap the quickstart target definition in `# [START quickstart]` and `# [END quickstart]` comments. The devtool uses these markers to extract the snippet.
+4.  **Verify the build**: Ensure that running `bazel build //...` in the example directory succeeds and generates the expected output in `bazel-bin/`.
+
+### 3. Integrate with the Developer Tool (devtool)
+
+To enable automatic documentation updates and version management, you must register the new language with the devtool.
+
+Follow the instructions in [`languages.go`](tools/cmd/devtool/languages.go) to register the new language and set up the required placeholders in the README.md.
+
+### 4. Create Integration Tests
+
+Create a standalone test workspace in `repo/tests/<lang>/` to run integration tests.
+
+1.  **Configure Bzlmod**: Like the example workspace, use `local_path_override` to point to the local modules.
+2.  **Write tests**: Implement tests that verify the generated code compiles, runs, and correctly resolves runfiles at runtime.
+3.  **Verify**: Ensure `bazel test //...` passes in the test directory.
+
+### 5. Add BCR Release Metadata
+
+Since each language module is published separately to the Bazel Central Registry (BCR), you must set up the release metadata:
+
+1.  **Create BCR metadata**: In `repo/.bcr/modules/`, create a new directory `rules_runfile_codegen_<lang>/`.
+2.  **Add configuration**: Create `metadata.json` and `presubmit.yml` in that directory, following the pattern of the existing modules.
+3.  **Update release workflow**: If necessary, update the GitHub Actions release workflow in `.github/workflows/release.yml` to include the new module in the release process.
 
 ---
 
 ## Project Structure Reference
 
-For details on the architecture, code generation design, and path resolution logic, see **[DESIGN.md](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/DESIGN.md)**.
+For details on the architecture, code generation design, and path resolution logic, see **[DESIGN.md](DESIGN.md)**.

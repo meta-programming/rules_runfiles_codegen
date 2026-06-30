@@ -1,5 +1,5 @@
 load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
-load("//internal:emitters/utils.bzl", "escape_go_string", "escape_kotlin_string", "sanitize_kdoc")
+load("//internal/emitters:utils.bzl", "escape_go_string", "escape_kotlin_string", "sanitize_kdoc")
 
 def _escape_go_string_test_impl(ctx):
     env = unittest.begin(ctx)

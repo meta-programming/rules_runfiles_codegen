@@ -26,42 +26,21 @@ jobs:
     # that the README updater reads. Running 'bazel test' also acts as our
     # integration test suite.
 
-    - name: Run Core Starlark Unit Tests
+    - name: Run All Tests
       run: |
-        cd core
-        bazel test //internal/...
+        tools/devtool test
 
-    - name: Run Go Integration Tests
+    - name: Verify Documentation is Synchronized
       run: |
-        cd tests/go
-        bazel test //...
-
-    - name: Run Go Quickstart Example
-      run: |
-        cd examples/go
-        bazel test //...
-
-    - name: Run Kotlin Integration Tests
-      run: |
-        cd tests/kotlin
-        bazel test //...
-
-    - name: Run Kotlin Quickstart Example
-      run: |
-        cd examples/kotlin
-        bazel test //...
-
-    - name: Verify README is Synchronized
-      run: |
-        go run tools/update_readme.go
+        # We don't need to build because 'test' already built everything
+        tools/devtool update-docs --build=false
         
-        # git diff --exit-code returns 0 if there are no changes, and 1 if there are.
-        # This will fail the CI if the developer forgot to run the tool locally.
-        git diff --exit-code README.md || (
+        # Verify no changes were made to README or Stardoc files
+        git diff --exit-code README.md go/docs/defs.md kotlin/docs/defs.md || (
           echo "=============================================================================="
-          echo " ERROR: README.md is out of sync with the actual test or generated code."
+          echo " ERROR: Documentation is out of sync."
           echo " Please run the following command locally and commit the changes:"
-          echo "   go run tools/update_readme.go"
+          echo "   tools/devtool update-docs"
           echo "=============================================================================="
           exit 1
         )

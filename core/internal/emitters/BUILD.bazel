@@ -1,0 +1,19 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//internal/emitters:template_test.bzl", "template_test_suite")
+load("//internal/emitters:utils_test.bzl", "utils_test_suite")
+
+package(default_visibility = ["//visibility:public"])
+
+bzl_library(
+    name = "emitters_bzl",
+    srcs = [
+        "go.bzl",
+        "kotlin.bzl",
+        "template.bzl",
+        "utils.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+template_test_suite(name = "template_tests")
+utils_test_suite(name = "utils_tests")
