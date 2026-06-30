@@ -37,35 +37,35 @@ var versionSetCmd = &cobra.Command{
 }
 
 func runVersionCheck() error {
-	corePath := filepath.Join(resolvedRoot, "core/MODULE.bazel")
-	goPath := filepath.Join(resolvedRoot, "go/MODULE.bazel")
-	kotlinPath := filepath.Join(resolvedRoot, "kotlin/MODULE.bazel")
-
-	coreVer, err := parseModuleVersion(corePath)
-	if err != nil {
-		return fmt.Errorf("failed to parse core version: %w", err)
-	}
-	goVer, err := parseModuleVersion(goPath)
-	if err != nil {
-		return fmt.Errorf("failed to parse go version: %w", err)
-	}
-	kotlinVer, err := parseModuleVersion(kotlinPath)
-	if err != nil {
-		return fmt.Errorf("failed to parse kotlin version: %w", err)
+	// Construct modules list dynamically: core + all languages
+	modules := []string{"core"}
+	for _, lang := range languages {
+		modules = append(modules, lang.ID)
 	}
 
-	fmt.Printf("core version:   %s\n", coreVer)
-	fmt.Printf("go version:     %s\n", goVer)
-	fmt.Printf("kotlin version: %s\n", kotlinVer)
+	versions := make(map[string]string)
+	for _, mod := range modules {
+		path := filepath.Join(resolvedRoot, mod, "MODULE.bazel")
+		ver, err := parseModuleVersion(path)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s version: %w", mod, err)
+		}
+		versions[mod] = ver
+		fmt.Printf("%-15s %s\n", mod+":", ver)
+	}
 
+	// Check consistency against the first module (core)
+	firstMod := modules[0]
+	firstVer := versions[firstMod]
 	mismatch := false
-	if coreVer != goVer {
-		fmt.Fprintf(os.Stderr, "mismatch: core version (%s) != go version (%s)\n", coreVer, goVer)
-		mismatch = true
-	}
-	if coreVer != kotlinVer {
-		fmt.Fprintf(os.Stderr, "mismatch: core version (%s) != kotlin version (%s)\n", coreVer, kotlinVer)
-		mismatch = true
+
+	for i := 1; i < len(modules); i++ {
+		mod := modules[i]
+		ver := versions[mod]
+		if ver != firstVer {
+			fmt.Fprintf(os.Stderr, "mismatch: %s version (%s) != %s version (%s)\n", firstMod, firstVer, mod, ver)
+			mismatch = true
+		}
 	}
 
 	if mismatch {
@@ -77,20 +77,19 @@ func runVersionCheck() error {
 }
 
 func runVersionSet(newVersion string) error {
-	corePath := filepath.Join(resolvedRoot, "core/MODULE.bazel")
-	goPath := filepath.Join(resolvedRoot, "go/MODULE.bazel")
-	kotlinPath := filepath.Join(resolvedRoot, "kotlin/MODULE.bazel")
+	// Construct modules list dynamically: core + all languages
+	modules := []string{"core"}
+	for _, lang := range languages {
+		modules = append(modules, lang.ID)
+	}
 
 	fmt.Printf("Setting version to %s in core, go, and kotlin modules...\n", newVersion)
 
-	if err := updateModuleVersion(corePath, newVersion); err != nil {
-		return fmt.Errorf("failed to update core version: %w", err)
-	}
-	if err := updateModuleVersion(goPath, newVersion); err != nil {
-		return fmt.Errorf("failed to update go version: %w", err)
-	}
-	if err := updateModuleVersion(kotlinPath, newVersion); err != nil {
-		return fmt.Errorf("failed to update kotlin version: %w", err)
+	for _, mod := range modules {
+		path := filepath.Join(resolvedRoot, mod, "MODULE.bazel")
+		if err := updateModuleVersion(path, newVersion); err != nil {
+			return fmt.Errorf("failed to update %s version: %w", mod, err)
+		}
 	}
 
 	fmt.Println("Successfully updated core, go, and kotlin module versions.")
