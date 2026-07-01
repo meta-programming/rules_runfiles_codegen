@@ -158,7 +158,7 @@ func main() {
 	paths := exampleSet.RelPaths()
 	sort.Strings(paths)
 	fmt.Printf("FileSet paths: %v\n", paths)
-	f1, err := exampleSet.ResolveFile("dummy.txt")
+	f1, err := exampleSet.File("dummy.txt")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error resolving dummy.txt: %v\n", err)
 		os.Exit(1)
@@ -324,7 +324,7 @@ fun main() {
     // 3. Access a fileset of runfiles (FileSet).
     val exampleSet = Resources.exampleSet.resolve()
     println("FileSet paths: ${exampleSet.relPaths.sorted()}")
-    val f1 = exampleSet.resolveFile("dummy.txt")
+    val f1 = exampleSet["dummy.txt"]
     println("FileSet dummy content: ${f1.path.readText().trim()}")
 }
 ```
