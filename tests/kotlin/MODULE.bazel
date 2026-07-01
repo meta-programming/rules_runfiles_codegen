@@ -7,6 +7,7 @@ bazel_dep(name = "rules_kotlin", version = "2.4.0")
 bazel_dep(name = "rules_shell", version = "0.8.0")
 bazel_dep(name = "rules_runfile_codegen_kotlin", version = "0.0.0")
 bazel_dep(name = "rules_runfile_codegen_core", version = "0.0.0")
+bazel_dep(name = "protobuf", version = "33.4")
 
 local_path_override(
     module_name = "rules_runfile_codegen_kotlin",
