@@ -47,14 +47,105 @@ go_runfile_library(<a href="#go_runfile_library-name">name</a>, <a href="#go_run
 
 Generates a Go library containing compile-time safe accessors for runfiles.
 
+    This macro automates the process of accessing Bazel runfiles in Go. It generates
+    a Go source file containing resolved runfile paths, allowing you to access them
+    via type-safe variables instead of hardcoded string literals.
+
+    The generated library uses `@rules_go//go/runfiles` to resolve the runfiles at runtime.
+
+    ### Example Usage
+
+    In your `BUILD.bazel`:
+
+    ```bazel
+    load("@rules_runfile_codegen_go//:defs.bzl", "go_runfile", "go_runfile_library")
+
+    go_runfile_library(
+        name = "my_runfiles",
+        importpath = "github.com/example/project/my_runfiles",
+        entries = [
+            go_runfile(
+                name = "ConfigJSON",
+                target = "//config:config.json",
+                doc = "The main configuration file.",
+            ),
+            go_runfile(
+                name = "HelperTool",
+                target = "//tools:helper_tool", # An executable target
+                doc = "A helper CLI tool.",
+            ),
+            go_runfile(
+                name = "ExampleSet",
+                targets = ["//data:file1.txt", "//data:file2.txt"],
+                base = "common_dir",
+                doc = "A set of data files.",
+            ),
+        ],
+    )
+    ```
+
+    In your `main.go`:
+
+    ```go
+    package main
+
+    import (
+        "fmt"
+        "os"
+        "log"
+
+        "github.com/example/project/my_runfiles"
+    )
+
+    func main() {
+        // 1. Accessing a regular runfile:
+        // Resolve the file safely (returns an error if missing).
+        configFile, err := my_runfiles.ConfigJSON.Resolve()
+        if err != nil {
+            log.Fatalf("Failed to resolve config: %v", err)
+        }
+        content, err := os.ReadFile(configFile.Path())
+        if err != nil {
+            log.Fatalf("Failed to read config: %v", err)
+        }
+        fmt.Printf("Config: %s
+", content)
+
+        // 2. Running an executable runfile:
+        // Use MustResolve() for easy fail-fast access (panics if missing).
+        helper := my_runfiles.HelperTool.MustResolve()
+        cmd := helper.Cmd("--verbose", "run")
+        cmd.Stdout = os.Stdout
+        cmd.Stderr = os.Stderr
+        if err := cmd.Run(); err != nil {
+            log.Fatalf("Helper tool failed: %v", err)
+        }
+
+        // 3. Accessing a fileset:
+        fileset, err := my_runfiles.ExampleSet.Resolve()
+        if err != nil {
+            log.Fatalf("Failed to resolve fileset: %v", err)
+        }
+        // Access file inside fileset by its relative path (after base stripping)
+        f1, err := fileset.ResolveFile("file1.txt")
+        // ... read f1.Path()
+    }
+    ```
+
+    Args:
+        name: A unique name for this target. The generated `go_library` will have this name.
+        importpath: The import path for the generated Go library.
+        entries: A list of runfile entries, constructed using the `go_runfile` helper.
+        **kwargs: Additional arguments to propagate to the underlying `go_library` target.
+
 **PARAMETERS**
 
 
 | Name  | Description | Default Value |
 | :------------- | :------------- | :------------- |
-| <a id="go_runfile_library-name"></a>name |  A unique name for this target. The generated `go_library` will have this name.   |  none |
-| <a id="go_runfile_library-importpath"></a>importpath |  The import path for the generated Go library.   |  none |
-| <a id="go_runfile_library-entries"></a>entries |  A list of runfile entries, constructed using the `go_runfile` helper.   |  none |
-| <a id="go_runfile_library-kwargs"></a>kwargs |  Additional arguments to propagate to the underlying `go_library` target.   |  none |
+| <a id="go_runfile_library-name"></a>name |  <p align="center"> - </p>   |  none |
+| <a id="go_runfile_library-importpath"></a>importpath |  <p align="center"> - </p>   |  none |
+| <a id="go_runfile_library-entries"></a>entries |  <p align="center"> - </p>   |  none |
+| <a id="go_runfile_library-kwargs"></a>kwargs |  <p align="center"> - </p>   |  none |
 
 

@@ -50,6 +50,80 @@ def kt_runfile(name, target = None, targets = None, doc = "", base = None, type 
 def kt_jvm_runfile_library(name, package, entries, object_name = None, **kwargs):
     """Generates a Kotlin JVM library containing compile-time safe accessors for runfiles.
 
+    This macro automates the process of accessing Bazel runfiles in Kotlin. It generates
+    a Kotlin source file containing a singleton `object` with properties that hold the
+    resolved runfile paths.
+
+    The generated library uses the official Bazel Java runfiles library (`@bazel_tools//tools/java/runfiles`)
+    to resolve the runfiles at runtime.
+
+    ### Example Usage
+
+    In your `BUILD.bazel`:
+
+    ```bazel
+    load("@rules_runfile_codegen_kotlin//:defs.bzl", "kt_runfile", "kt_jvm_runfile_library")
+
+    kt_jvm_runfile_library(
+        name = "my_runfiles",
+        package = "com.example.project.runfiles",
+        entries = [
+            kt_runfile(
+                name = "configJson",
+                target = "//config:config.json",
+                doc = "The main configuration file.",
+            ),
+            kt_runfile(
+                name = "helperTool",
+                target = "//tools:helper_tool", # An executable target
+                doc = "A helper CLI tool.",
+            ),
+            kt_runfile(
+                name = "exampleSet",
+                targets = ["//data:file1.txt", "//data:file2.txt"],
+                base = "common_dir",
+                doc = "A set of data files.",
+            ),
+        ],
+    )
+    ```
+
+    In your `Main.kt`:
+
+    ```kotlin
+    package com.example.project
+
+    import com.example.project.runfiles.MyRunfiles
+    import kotlin.io.path.readText
+
+    fun main() {
+        // 1. Accessing a regular runfile:
+        // Resolve the spec and read its content directly using Path.readText().
+        val content = MyRunfiles.configJson.resolve().path.readText()
+        println("Content: $content")
+
+        // The resolved path is a java.nio.file.Path
+        val path = MyRunfiles.configJson.resolve().path
+        
+        // 2. Running an executable runfile:
+        // Resolve, configure, start, and wait for the process in a fluent chain.
+        val exitCode = MyRunfiles.helperTool.resolve()
+            .processBuilder("--verbose", "run")
+            .inheritIO()
+            .start()
+            .waitFor()
+        if (exitCode != 0) {
+            error("Helper tool failed with exit code $exitCode")
+        }
+
+        // 3. Accessing a fileset:
+        val fileset = MyRunfiles.exampleSet.resolve()
+        // Access file inside fileset by its relative path (after base stripping)
+        val f1 = fileset.resolveFile("file1.txt")
+        // ... read f1.path.readText()
+    }
+    ```
+
     Args:
         name: A unique name for this target. The generated `kt_jvm_library` will have this name.
         package: The Kotlin package name for the generated file.
