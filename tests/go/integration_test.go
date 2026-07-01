@@ -452,6 +452,49 @@ func TestDistantGroupUnfiltered(t *testing.T) {
 	}
 }
 
+func TestMockRepoGroup(t *testing.T) {
+	fileset, err := test_resources.MockRepoGroup.Resolve()
+	if err != nil {
+		t.Fatalf("Failed to resolve MockRepoGroup: %v", err)
+	}
+
+	paths := fileset.RelPaths()
+	sort.Strings(paths)
+	expectedPaths := []string{"file1.txt", "file2.txt"}
+	if len(paths) != len(expectedPaths) {
+		t.Fatalf("FileSet has %d paths, want %d. Got: %v", len(paths), len(expectedPaths), paths)
+	}
+	for i, p := range paths {
+		if p != expectedPaths[i] {
+			t.Errorf("FileSet path[%d] = %q, want %q", i, p, expectedPaths[i])
+		}
+	}
+
+	f1, err := fileset.ResolveFile("file1.txt")
+	if err != nil {
+		t.Fatalf("Failed to resolve file1.txt: %v", err)
+	}
+	content1, err := os.ReadFile(f1.Path())
+	if err != nil {
+		t.Fatalf("Failed to read file1.txt: %v", err)
+	}
+	if strings.TrimSpace(string(content1)) != "mock file 1" {
+		t.Errorf("file1.txt content = %q, want %q", string(content1), "mock file 1")
+	}
+
+	f2, err := fileset.ResolveFile("file2.txt")
+	if err != nil {
+		t.Fatalf("Failed to resolve file2.txt: %v", err)
+	}
+	content2, err := os.ReadFile(f2.Path())
+	if err != nil {
+		t.Fatalf("Failed to read file2.txt: %v", err)
+	}
+	if strings.TrimSpace(string(content2)) != "mock file 2" {
+		t.Errorf("file2.txt content = %q, want %q", string(content2), "mock file 2")
+	}
+}
+
 func TestStrictFile(t *testing.T) {
 	file, err := test_resources.StrictFile.Resolve()
 	if err != nil {

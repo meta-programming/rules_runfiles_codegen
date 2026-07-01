@@ -39,11 +39,15 @@ def kt_runfile(name, target = None, targets = None, doc = "", base = None, type 
     if resolved_targets == None:
         resolved_targets = [target]
 
+    resolved_base = base
+    if base != None and (base.startswith("@") or base.startswith("//")):
+        resolved_base = str(native.package_relative_label(base))
+
     return {
         "name": name,
         "targets": resolved_targets,
         "doc": doc,
-        "base": base,
+        "base": resolved_base,
         "type": type,
     }
 

@@ -164,5 +164,20 @@ fun main() {
         throw RuntimeException("mixedFileSet dummy content mismatch")
     }
 
+    // MockRepoGroup test
+    val mockRepoFs = TestResources.mockRepoGroup.resolve()
+    val expectedMockRepoPaths = listOf("file1.txt", "file2.txt")
+    if (mockRepoFs.relPaths.sorted() != expectedMockRepoPaths) {
+        throw RuntimeException("mockRepoGroup paths mismatch: got ${mockRepoFs.relPaths.sorted()}, want $expectedMockRepoPaths")
+    }
+    val mr1 = mockRepoFs.resolveFile("file1.txt")
+    if (mr1.path.readText().trim() != "mock file 1") {
+        throw RuntimeException("mockRepoGroup file1 content mismatch: got '${mr1.path.readText().trim()}'")
+    }
+    val mr2 = mockRepoFs.resolveFile("file2.txt")
+    if (mr2.path.readText().trim() != "mock file 2") {
+        throw RuntimeException("mockRepoGroup file2 content mismatch: got '${mr2.path.readText().trim()}'")
+    }
+
     println("All tests passed!")
 }

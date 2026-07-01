@@ -132,6 +132,12 @@ kt_jvm_runfile_library(
             ],
             base = "common_dir",
         ),
+        kt_runfile(
+            name = "mockRepoGroup",
+            doc = "A fileset from external repo with repo-relative base.",
+            targets = ["@mock_repo//:files"],
+            base = "@mock_repo//data",
+        ),
     ],
     package = "com.example.project.tests.resources",
 )

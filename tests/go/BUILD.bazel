@@ -135,6 +135,12 @@ go_runfile_library(
             base = "",
         ),
         go_runfile(
+            name = "MockRepoGroup",
+            doc = "A fileset from external repo with repo-relative base.",
+            targets = ["@mock_repo//:files"],
+            base = "@mock_repo//data",
+        ),
+        go_runfile(
             name = "SubGroupPackageRelative",
             doc = "Subdir fileset with package-relative base.",
             target = "//subdir:sub_collection1",
