@@ -182,7 +182,10 @@ class Directory internal constructor(
 }
 
 /**
- * Represents an unresolved fileset of runfiles.
+ * Represents an unresolved fileset of runfiles (typically representing
+ * multiple targets or a multi-file target like filegroup).
+ *
+ * See [Bazel filegroup](https://bazel.build/reference/be/general#filegroup) for details.
  */
 class FileSetSpec(
     val files: Map<String, String> // maps user-facing relPath to canonical rlocation path
@@ -193,7 +196,10 @@ class FileSetSpec(
 }
 
 /**
- * Represents a resolved fileset of runfiles.
+ * Represents a resolved fileset of runfiles (typically representing
+ * multiple targets or a multi-file target like filegroup).
+ *
+ * See [Bazel filegroup](https://bazel.build/reference/be/general#filegroup) for details.
  */
 class FileSet internal constructor(
     val files: Map<String, String>,

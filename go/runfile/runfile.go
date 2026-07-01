@@ -300,7 +300,10 @@ func (d Directory) Child(relPath string) File {
 // FileSet Support
 // ---------------------------------------------------------------------------
 
-// FileSetSpec represents an unresolved fileset of runfiles.
+// FileSetSpec represents an unresolved fileset of runfiles (typically representing
+// multiple targets or a multi-file target like filegroup).
+//
+// See https://bazel.build/reference/be/general#filegroup for details.
 type FileSetSpec struct {
 	files map[string]string // maps user-facing relPath to canonical rlocation path
 }
@@ -336,7 +339,10 @@ func (fss FileSetSpec) MustResolve(opts ...ResolveOption) FileSet {
 	return fs
 }
 
-// FileSet represents a resolved fileset of runfiles.
+// FileSet represents a resolved fileset of runfiles (typically representing
+// multiple targets or a multi-file target like filegroup).
+//
+// See https://bazel.build/reference/be/general#filegroup for details.
 type FileSet struct {
 	files    map[string]string // maps user-facing relPath to canonical rlocation path
 	resolver Resolver
