@@ -87,6 +87,14 @@ def emit_go(importpath, entries):
         escaped_path = escape_go_string(entry["runfile_path"])
         if entry["is_executable"]:
             lines.append('\t%s = runfile.NewExecutableSpec("%s")' % (entry["name"], escaped_path))
+        elif entry["is_directory"]:
+            lines.append('\t%s = runfile.NewDirectorySpec("%s")' % (entry["name"], escaped_path))
+        elif entry["is_collection"]:
+            map_entries = []
+            for rel, canonical in entry["collection_files"].items():
+                map_entries.append('"%s": "%s"' % (escape_go_string(rel), escape_go_string(canonical)))
+            map_str = ", ".join(map_entries)
+            lines.append('\t%s = runfile.NewFileSetSpec(map[string]string{%s})' % (entry["name"], map_str))
         else:
             lines.append('\t%s = runfile.NewSpec("%s")' % (entry["name"], escaped_path))
         var_blocks.append("\n".join(lines))

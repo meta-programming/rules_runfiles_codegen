@@ -91,6 +91,8 @@ class FileSpec(
 
 /**
  * Represents an unresolved executable runfile specification.
+ *
+ * This typically points to an executable target (like a kt_jvm_binary or sh_binary).
  */
 class ExecutableSpec(
     /** The logical, runfiles-root-relative path for this executable runfile. */
@@ -133,8 +135,11 @@ class Executable internal constructor(
 ) : File(rlocationPath, path) {
 
     /**
-     * Returns a [ProcessBuilder] pre-configured to run this executable,
-     * with Bazel runfiles environment variables already propagated.
+     * Returns a [ProcessBuilder] pre-configured to run this executable.
+     *
+     * The returned builder has the [envVars] (such as RUNFILES_DIR and
+     * RUNFILES_MANIFEST_FILE) already injected into its environment to ensure
+     * that the launched subprocess can also resolve its own runfiles.
      */
     fun processBuilder(vararg args: String): ProcessBuilder {
         return ProcessBuilder(path.toString(), *args).apply {
@@ -142,3 +147,84 @@ class Executable internal constructor(
         }
     }
 }
+
+/**
+ * Represents an unresolved directory runfile (TreeArtifact) specification.
+ *
+ * See [Bazel Tree Artifacts](https://bazel.build/extending/rules#tree_artifacts) for details.
+ */
+class DirectorySpec(
+    val rlocationPath: RlocationPath
+) {
+    private val fileSpec = FileSpec(rlocationPath)
+
+    fun resolve(resolver: Resolver = Resolver.Default): Directory {
+        val file = fileSpec.resolve(resolver)
+        return Directory(file.rlocationPath, file.path)
+    }
+}
+
+/**
+ * Represents a resolved directory runfile (TreeArtifact).
+ *
+ * See [Bazel Tree Artifacts](https://bazel.build/extending/rules#tree_artifacts) for details.
+ */
+class Directory internal constructor(
+    rlocationPath: RlocationPath,
+    path: Path
+) : File(rlocationPath, path) {
+    /**
+     * Returns a File reference to a file inside this directory.
+     * Note: This does NOT resolve the file via the runfiles resolver,
+     * but simply joins the directory path with the relative path.
+     */
+    fun child(relPath: String): File {
+        return File(
+            RlocationPath("${rlocationPath.value}/$relPath"),
+            path.resolve(relPath)
+        )
+    }
+}
+
+/**
+ * Represents an unresolved fileset of runfiles (typically representing
+ * multiple targets or a multi-file target like filegroup).
+ *
+ * See [Bazel filegroup](https://bazel.build/reference/be/general#filegroup) for details.
+ */
+class FileSetSpec(
+    val files: Map<String, String> // maps user-facing relPath to canonical rlocation path
+) {
+    fun resolve(resolver: Resolver = Resolver.Default): FileSet {
+        val resolvedFiles = files.mapValues { (rel, rloc) ->
+            val resolvedPath = resolver.rlocation(RlocationPath(rloc))
+                ?: throw RunfileResolutionException("Failed to resolve file $rloc in fileset")
+            File(RlocationPath(rloc), Paths.get(resolvedPath))
+        }
+        return FileSet(resolvedFiles)
+    }
+}
+
+/**
+ * Represents a resolved fileset of runfiles (typically representing
+ * multiple targets or a multi-file target like filegroup).
+ *
+ * See [Bazel filegroup](https://bazel.build/reference/be/general#filegroup) for details.
+ */
+class FileSet internal constructor(
+    val files: Map<String, File>
+) {
+    /**
+     * Returns the list of relative paths available in this fileset.
+     */
+    val relPaths: List<String> get() = files.keys.toList()
+
+    /**
+     * Returns a specific file in the fileset by its relative path.
+     * Throws RunfileResolutionException if the file is not in this fileset.
+     */
+    operator fun get(relPath: String): File {
+        return files[relPath] ?: throw RunfileResolutionException("File $relPath is not in this fileset")
+    }
+}
+

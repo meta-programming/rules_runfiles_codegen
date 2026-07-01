@@ -1,5 +1,6 @@
 load("@rules_go//go:def.bzl", "go_binary", "go_test")
 load("@rules_runfile_codegen_go//:defs.bzl", "go_runfile", "go_runfile_library")
+load("//:rules.bzl", "dir_producer")
 
 package(default_visibility = ["//visibility:private"])
 
@@ -13,23 +14,197 @@ go_binary(
     ],
 )
 
+# Consolidated filegroups (proving duplicate target mapping works)
+filegroup(
+    name = "collection_data",
+    srcs = [
+        "data/collection/file1.txt",
+        "data/collection/file2.txt",
+    ],
+)
+
+dir_producer(
+    name = "dir_data",
+)
+
+filegroup(
+    name = "wrapped_dir",
+    srcs = [":dir_data"],
+)
+
+filegroup(
+    name = "strict_file_data",
+    srcs = ["data/dummy.txt"],
+)
+
+dir_producer(
+    name = "strict_dir_data",
+)
+
+filegroup(
+    name = "forced_col_data",
+    srcs = ["data/dummy.txt"],
+)
+
+filegroup(
+    name = "mixed_collection",
+    srcs = [
+        ":dir_data",
+        "data/dummy.txt",
+    ],
+)
+
+genrule(
+    name = "gen_data",
+    outs = ["data/gen_data.txt"],
+    cmd = "echo 'generated' > $@",
+)
+
+filegroup(
+    name = "distant_collection",
+    srcs = [
+        "data/dummy.txt",
+        "@rules_go//:LICENSE.txt",
+    ],
+)
+
 go_runfile_library(
     name = "test_resources",
     entries = [
         go_runfile(
-            name = "DataFile",
-            doc = "A dummy data file.",
+            name = "SingleFile",
+            doc = "A single data file.",
             target = "data/dummy.txt",
         ),
         go_runfile(
-            name = "HelperTool",
-            doc = "A helper tool executable.",
+            name = "ExecutableFile",
+            doc = "An executable tool.",
             target = ":helper_bin",
         ),
         go_runfile(
             name = "ExternalFile",
             doc = "An external file from rules_go.",
             target = "@rules_go//:LICENSE.txt",
+        ),
+        go_runfile(
+            name = "GroupData",
+            doc = "A fileset of files with explicit relative base.",
+            target = ":collection_data",
+            base = "./data/collection",
+        ),
+        go_runfile(
+            name = "GroupDataDefault",
+            doc = "A fileset of files with default base (library package).",
+            target = ":collection_data",
+        ),
+        go_runfile(
+            name = "DirData",
+            doc = "A directory of files.",
+            target = ":dir_data",
+        ),
+        go_runfile(
+            name = "WrappedDir",
+            doc = "A directory wrapped in a filegroup.",
+            target = ":wrapped_dir",
+        ),
+        go_runfile(
+            name = "MixedGroup",
+            doc = "A mix of directory and file.",
+            target = ":mixed_collection",
+        ),
+        go_runfile(
+            name = "GenData",
+            doc = "Generated data file.",
+            target = ":gen_data",
+        ),
+        go_runfile(
+            name = "DistantGroup",
+            doc = "A fileset of files from different repos.",
+            target = ":distant_collection",
+        ),
+        go_runfile(
+            name = "DistantGroupFiltered",
+            doc = "A fileset of files from different repos, filtered to only include main repo files under data/.",
+            target = ":distant_collection",
+            base = "//data",
+        ),
+        go_runfile(
+            name = "DistantGroupUnfiltered",
+            doc = "A fileset of files from different repos, unfiltered (strip_prefix = '').",
+            target = ":distant_collection",
+            base = "",
+        ),
+        go_runfile(
+            name = "MockRepoGroup",
+            doc = "A fileset from external repo with repo-relative base.",
+            targets = ["@mock_repo//:files"],
+            base = "@mock_repo//data",
+        ),
+        go_runfile(
+            name = "SubGroupPackageRelative",
+            doc = "Subdir fileset with package-relative base.",
+            target = "//subdir:sub_collection1",
+            base = "./subdir/sub_data",
+        ),
+        go_runfile(
+            name = "SubGroupRepoRelative",
+            doc = "Subdir fileset with repo-relative base.",
+            target = "//subdir:sub_collection2",
+            base = "//subdir/sub_data",
+        ),
+        go_runfile(
+            name = "StrictFile",
+            doc = "A file with explicit type assertion.",
+            target = ":strict_file_data",
+            type = "file",
+        ),
+        go_runfile(
+            name = "StrictDir",
+            doc = "A directory with explicit type assertion.",
+            target = ":strict_dir_data",
+            type = "directory",
+        ),
+        go_runfile(
+            name = "StrictFileSet",
+            doc = "A fileset with explicit type assertion.",
+            target = ":collection_data",
+            base = "./data/collection",
+            type = "fileset",
+        ),
+        go_runfile(
+            name = "ForcedFileSet",
+            doc = "A single file forced to be a fileset.",
+            target = ":forced_col_data",
+            type = "fileset",
+        ),
+        go_runfile(
+            name = "CommonDirFileSet",
+            doc = "A fileset using common_dir base.",
+            target = ":collection_data",
+            base = "common_dir",
+        ),
+        # Test duplicate targets mapping under different configurations
+        go_runfile(
+            name = "DuplicateTarget1",
+            doc = "First mapping of collection_data with strip.",
+            target = ":collection_data",
+            base = "./data/collection",
+        ),
+        go_runfile(
+            name = "DuplicateTarget2",
+            doc = "Second mapping of collection_data keeping full path.",
+            target = ":collection_data",
+            base = "",
+        ),
+        # Test multiple targets merged into a single fileset
+        go_runfile(
+            name = "MixedFileSet",
+            doc = "A fileset merging local collection and subdir collection.",
+            targets = [
+                ":collection_data",
+                "//subdir:sub_collection2",
+            ],
+            base = "common_dir",
         ),
     ],
     importpath = "github.com/example/project/repo/tests/go/test_resources",

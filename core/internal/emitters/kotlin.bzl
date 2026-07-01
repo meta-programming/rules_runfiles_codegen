@@ -10,6 +10,8 @@ package {{package}}
 
 import com.github.metaprogramming.runfiles.FileSpec
 import com.github.metaprogramming.runfiles.ExecutableSpec
+import com.github.metaprogramming.runfiles.DirectorySpec
+import com.github.metaprogramming.runfiles.FileSetSpec
 import com.github.metaprogramming.runfiles.RlocationPath""",
         package = package,
     )
@@ -99,6 +101,14 @@ def emit_kotlin(package, entries, object_name, rule_label):
         
         if entry["is_executable"]:
             lines.append('    val %s = ExecutableSpec(RlocationPath("%s"))' % (entry["name"], escaped_path))
+        elif entry["is_directory"]:
+            lines.append('    val %s = DirectorySpec(RlocationPath("%s"))' % (entry["name"], escaped_path))
+        elif entry["is_collection"]:
+            map_entries = []
+            for rel, canonical in entry["collection_files"].items():
+                map_entries.append('"%s" to "%s"' % (escape_kotlin_string(rel), escape_kotlin_string(canonical)))
+            map_str = ", ".join(map_entries)
+            lines.append('    val %s = FileSetSpec(mapOf(%s))' % (entry["name"], map_str))
         else:
             lines.append('    val %s = FileSpec(RlocationPath("%s"))' % (entry["name"], escaped_path))
         members.append("\n".join(lines))

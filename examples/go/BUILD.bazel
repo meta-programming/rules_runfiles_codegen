@@ -25,6 +25,12 @@ go_runfile_library(
             target = ":helper",
             doc = "A helper tool executable.",
         ),
+        go_runfile(
+            name = "ExampleSet",
+            targets = ["data/dummy.txt", "data/info.txt"],
+            base = "common_dir",
+            doc = "A set of example data files.",
+        ),
     ],
 )
 

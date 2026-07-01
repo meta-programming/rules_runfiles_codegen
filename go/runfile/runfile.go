@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 
 	"github.com/bazelbuild/rules_go/go/runfiles"
@@ -171,6 +172,9 @@ func (fs FileSpec) MustResolve(opts ...ResolveOption) File {
 }
 
 // ExecutableSpec represents an unresolved executable runfile specification.
+//
+// This typically points to an executable target (like a go_binary, sh_binary,
+// or cc_binary).
 type ExecutableSpec struct {
 	FileSpec
 }
@@ -232,8 +236,11 @@ type Executable struct {
 	File
 }
 
-// Cmd returns an [exec.Cmd] pre-configured to run this executable,
-// with Bazel runfiles environment variables already propagated.
+// Cmd returns an [exec.Cmd] pre-configured to run this executable.
+//
+// It automatically propagates the environment variables returned by
+// [runfiles.Env] (such as RUNFILES_DIR and RUNFILES_MANIFEST_FILE) to the
+// subprocess to ensure it can also locate its runfiles.
 //
 // This method is guaranteed to succeed and does not return an error.
 func (e Executable) Cmd(args ...string) *exec.Cmd {
@@ -242,4 +249,143 @@ func (e Executable) Cmd(args ...string) *exec.Cmd {
 		cmd.Env = append(os.Environ(), env...)
 	}
 	return cmd
+}
+
+// ---------------------------------------------------------------------------
+// Directory (TreeArtifact) Support
+// ---------------------------------------------------------------------------
+
+// DirectorySpec represents an unresolved directory runfile (TreeArtifact).
+//
+// See https://bazel.build/extending/rules#tree_artifacts for details.
+type DirectorySpec struct {
+	FileSpec
+}
+
+// NewDirectorySpec creates a new unresolved [DirectorySpec] reference.
+func NewDirectorySpec(rlocation RlocationPath) DirectorySpec {
+	return DirectorySpec{FileSpec: NewSpec(rlocation)}
+}
+
+// Resolve attempts to find the directory on disk.
+func (ds DirectorySpec) Resolve(opts ...ResolveOption) (Directory, error) {
+	f, err := ds.FileSpec.Resolve(opts...)
+	if err != nil {
+		return Directory{}, err
+	}
+	return Directory{File: f}, nil
+}
+
+// MustResolve is like [DirectorySpec.Resolve] but panics if the directory cannot be found.
+func (ds DirectorySpec) MustResolve(opts ...ResolveOption) Directory {
+	d, err := ds.Resolve(opts...)
+	if err != nil {
+		panic(err)
+	}
+	return d
+}
+
+// Directory represents a resolved directory runfile (TreeArtifact).
+//
+// See https://bazel.build/extending/rules#tree_artifacts for details.
+type Directory struct {
+	File
+}
+
+// Child returns a File reference to a file inside this directory.
+// Note: This does NOT resolve the file via the runfiles resolver,
+// but simply joins the directory path with the relative path.
+func (d Directory) Child(relPath string) File {
+	return File{
+		rlocation: d.rlocation + "/" + RlocationPath(relPath),
+		absPath:   filepath.Join(d.Path(), relPath),
+	}
+}
+
+// ---------------------------------------------------------------------------
+// FileSet Support
+// ---------------------------------------------------------------------------
+
+// FileSetSpec represents an unresolved fileset of runfiles (typically representing
+// multiple targets or a multi-file target like filegroup).
+//
+// See https://bazel.build/reference/be/general#filegroup for details.
+type FileSetSpec struct {
+	files map[string]string // maps user-facing relPath to canonical rlocation path
+}
+
+// NewFileSetSpec creates a new unresolved [FileSetSpec] reference.
+func NewFileSetSpec(files map[string]string) FileSetSpec {
+	return FileSetSpec{files: files}
+}
+
+// Resolve attempts to prepare the fileset for resolution.
+func (fss FileSetSpec) Resolve(opts ...ResolveOption) (FileSet, error) {
+	var o resolveOpts
+	for _, opt := range opts {
+		opt(&o)
+	}
+	resolver := o.resolver
+	if resolver == nil {
+		var err error
+		resolver, err = getDefaultResolver()
+		if err != nil {
+			return FileSet{}, fmt.Errorf("default runfiles resolver initialization failed: %w", err)
+		}
+	}
+
+	resolvedFiles := make(map[string]File, len(fss.files))
+	for rel, rloc := range fss.files {
+		absPath, err := resolver.Rlocation(rloc)
+		if err != nil {
+			return FileSet{}, fmt.Errorf("failed to resolve file %q in fileset: %w", rloc, err)
+		}
+		resolvedFiles[rel] = File{rlocation: RlocationPath(rloc), absPath: absPath}
+	}
+
+	return FileSet{files: resolvedFiles}, nil
+}
+
+// MustResolve is like [FileSetSpec.Resolve] but panics if the resolver cannot be initialized.
+func (fss FileSetSpec) MustResolve(opts ...ResolveOption) FileSet {
+	fs, err := fss.Resolve(opts...)
+	if err != nil {
+		panic(err)
+	}
+	return fs
+}
+
+// FileSet represents a resolved fileset of runfiles (typically representing
+// multiple targets or a multi-file target like filegroup).
+//
+// See https://bazel.build/reference/be/general#filegroup for details.
+type FileSet struct {
+	files map[string]File // maps user-facing relPath to resolved File
+}
+
+// RelPaths returns the list of relative paths in this fileset.
+func (fs FileSet) RelPaths() []string {
+	paths := make([]string, 0, len(fs.files))
+	for p := range fs.files {
+		paths = append(paths, p)
+	}
+	return paths
+}
+
+// File returns a specific file in the fileset by its relative path.
+func (fs FileSet) File(relPath string) (File, error) {
+	file, ok := fs.files[relPath]
+	if !ok {
+		return File{}, fmt.Errorf("file %q is not in this fileset", relPath)
+	}
+	return file, nil
+}
+
+// MustFile is like [FileSet.File] but panics if the file is not found.
+func (fs FileSet) MustFile(relPath string) File {
+	file, err := fs.File(relPath)
+	if err != nil {
+		panic(err)
+	}
+	return file
 }
