@@ -196,7 +196,12 @@ class FileSetSpec(
     val files: Map<String, String> // maps user-facing relPath to canonical rlocation path
 ) {
     fun resolve(resolver: Resolver = Resolver.Default): FileSet {
-        return FileSet(files, resolver)
+        val resolvedFiles = files.mapValues { (rel, rloc) ->
+            val resolvedPath = resolver.rlocation(RlocationPath(rloc))
+                ?: throw RunfileResolutionException("Failed to resolve file $rloc in fileset")
+            File(RlocationPath(rloc), Paths.get(resolvedPath))
+        }
+        return FileSet(resolvedFiles)
     }
 }
 
@@ -207,8 +212,7 @@ class FileSetSpec(
  * See [Bazel filegroup](https://bazel.build/reference/be/general#filegroup) for details.
  */
 class FileSet internal constructor(
-    val files: Map<String, String>,
-    private val resolver: Resolver
+    val files: Map<String, File>
 ) {
     /**
      * Returns the list of relative paths available in this fileset.
@@ -219,10 +223,7 @@ class FileSet internal constructor(
      * Resolves a specific file in the fileset by its relative path.
      */
     fun resolveFile(relPath: String): File {
-        val fullRlocation = files[relPath] ?: throw RunfileResolutionException("File $relPath is not in this fileset")
-        val resolvedPath = resolver.rlocation(RlocationPath(fullRlocation))
-            ?: throw RunfileResolutionException("Failed to resolve file: $fullRlocation")
-        return File(RlocationPath(fullRlocation), Paths.get(resolvedPath))
+        return files[relPath] ?: throw RunfileResolutionException("File $relPath is not in this fileset")
     }
 }
 

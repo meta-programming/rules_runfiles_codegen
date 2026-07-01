@@ -333,7 +333,17 @@ func (fss FileSetSpec) Resolve(opts ...ResolveOption) (FileSet, error) {
 			return FileSet{}, fmt.Errorf("default runfiles resolver initialization failed: %w", err)
 		}
 	}
-	return FileSet{files: fss.files, resolver: resolver}, nil
+
+	resolvedFiles := make(map[string]File, len(fss.files))
+	for rel, rloc := range fss.files {
+		absPath, err := resolver.Rlocation(rloc)
+		if err != nil {
+			return FileSet{}, fmt.Errorf("failed to resolve file %q in fileset: %w", rloc, err)
+		}
+		resolvedFiles[rel] = File{rlocation: RlocationPath(rloc), absPath: absPath}
+	}
+
+	return FileSet{files: resolvedFiles}, nil
 }
 
 // MustResolve is like [FileSetSpec.Resolve] but panics if the resolver cannot be initialized.
@@ -350,8 +360,7 @@ func (fss FileSetSpec) MustResolve(opts ...ResolveOption) FileSet {
 //
 // See https://bazel.build/reference/be/general#filegroup for details.
 type FileSet struct {
-	files    map[string]string // maps user-facing relPath to canonical rlocation path
-	resolver Resolver
+	files map[string]File // maps user-facing relPath to resolved File
 }
 
 // RelPaths returns the list of relative paths in this fileset.
@@ -365,16 +374,11 @@ func (fs FileSet) RelPaths() []string {
 
 // ResolveFile resolves a specific file in the fileset by its relative path.
 func (fs FileSet) ResolveFile(relPath string) (File, error) {
-	fullRlocation, ok := fs.files[relPath]
+	file, ok := fs.files[relPath]
 	if !ok {
 		return File{}, fmt.Errorf("file %q is not in this fileset", relPath)
 	}
-
-	absPath, err := fs.resolver.Rlocation(fullRlocation)
-	if err != nil {
-		return File{}, fmt.Errorf("failed to resolve file %q: %w", fullRlocation, err)
-	}
-	return File{rlocation: RlocationPath(fullRlocation), absPath: absPath}, nil
+	return file, nil
 }
 
 // MustResolveFile is like [FileSet.ResolveFile] but panics if the file cannot be resolved.
