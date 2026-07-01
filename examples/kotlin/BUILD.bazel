@@ -26,6 +26,12 @@ kt_jvm_runfile_library(
             target = ":helper",
             doc = "A helper tool executable.",
         ),
+        kt_runfile(
+            name = "exampleSet",
+            targets = ["data/dummy.txt", "data/info.txt"],
+            base = "common_dir",
+            doc = "A set of example data files.",
+        ),
     ],
 )
 
