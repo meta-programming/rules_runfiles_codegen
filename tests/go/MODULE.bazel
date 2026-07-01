@@ -16,3 +16,9 @@ local_path_override(
     module_name = "rules_runfile_codegen_core",
     path = "../../core",
 )
+
+bazel_dep(name = "mock_repo", version = "0.0.0")
+local_path_override(
+    module_name = "mock_repo",
+    path = "mock_repo",
+)

@@ -84,6 +84,12 @@ go_runfile_library(
             target = ":helper",
             doc = "A helper tool executable.",
         ),
+        go_runfile(
+            name = "ExampleSet",
+            targets = ["data/dummy.txt", "data/info.txt"],
+            base = "common_dir",
+            doc = "A set of example data files.",
+        ),
     ],
 )
 
@@ -112,6 +118,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 
 	"github.com/example/project/examples/go/resources"
 )
@@ -140,6 +148,23 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Printf("Helper output: %s", string(output))
+
+	// 3. Access a fileset of runfiles (FileSet).
+	exampleSet, err := resources.ExampleSet.Resolve()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error resolving fileset: %v\n", err)
+		os.Exit(1)
+	}
+	paths := exampleSet.RelPaths()
+	sort.Strings(paths)
+	fmt.Printf("FileSet paths: %v\n", paths)
+	f1, err := exampleSet.File("dummy.txt")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error resolving dummy.txt: %v\n", err)
+		os.Exit(1)
+	}
+	c1, _ := os.ReadFile(f1.Path())
+	fmt.Printf("FileSet dummy content: %s\n", strings.TrimSpace(string(c1)))
 }
 ```
 <!-- GO_USAGE_END -->
@@ -164,6 +189,10 @@ var (
 	// DataFile is A dummy data file.
 	// Source: @@//:data/dummy.txt
 	DataFile = runfile.NewSpec("_main/data/dummy.txt")
+
+	// ExampleSet is A set of example data files.
+	// Source: @@//:data/dummy.txt, @@//:data/info.txt
+	ExampleSet = runfile.NewFileSetSpec(map[string]string{"dummy.txt": "_main/data/dummy.txt", "info.txt": "_main/data/info.txt"})
 
 	// HelperTool is A helper tool executable.
 	// Source: @@//:helper
@@ -242,6 +271,12 @@ kt_jvm_runfile_library(
             target = ":helper",
             doc = "A helper tool executable.",
         ),
+        kt_runfile(
+            name = "exampleSet",
+            targets = ["data/dummy.txt", "data/info.txt"],
+            base = "common_dir",
+            doc = "A set of example data files.",
+        ),
     ],
 )
 
@@ -285,6 +320,12 @@ fun main() {
         error("Helper tool failed with exit code $exitCode")
     }
     println("Helper output: $output")
+
+    // 3. Access a fileset of runfiles (FileSet).
+    val exampleSet = Resources.exampleSet.resolve()
+    println("FileSet paths: ${exampleSet.relPaths.sorted()}")
+    val f1 = exampleSet["dummy.txt"]
+    println("FileSet dummy content: ${f1.path.readText().trim()}")
 }
 ```
 <!-- KOTLIN_USAGE_END -->
@@ -316,6 +357,8 @@ package com.example.project.examples.resources
 
 import com.github.metaprogramming.runfiles.FileSpec
 import com.github.metaprogramming.runfiles.ExecutableSpec
+import com.github.metaprogramming.runfiles.DirectorySpec
+import com.github.metaprogramming.runfiles.FileSetSpec
 import com.github.metaprogramming.runfiles.RlocationPath
 
 object Resources {
@@ -324,6 +367,12 @@ object Resources {
      * Source: @@//:data/dummy.txt
      */
     val configJson = FileSpec(RlocationPath("_main/data/dummy.txt"))
+
+    /**
+     * A set of example data files.
+     * Source: @@//:data/dummy.txt, @@//:data/info.txt
+     */
+    val exampleSet = FileSetSpec(mapOf("dummy.txt" to "_main/data/dummy.txt", "info.txt" to "_main/data/info.txt"))
 
     /**
      * A helper tool executable.

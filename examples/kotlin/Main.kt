@@ -17,4 +17,10 @@ fun main() {
         error("Helper tool failed with exit code $exitCode")
     }
     println("Helper output: $output")
+
+    // 3. Access a fileset of runfiles (FileSet).
+    val exampleSet = Resources.exampleSet.resolve()
+    println("FileSet paths: ${exampleSet.relPaths.sorted()}")
+    val f1 = exampleSet["dummy.txt"]
+    println("FileSet dummy content: ${f1.path.readText().trim()}")
 }

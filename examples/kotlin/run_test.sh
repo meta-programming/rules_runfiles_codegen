@@ -17,7 +17,9 @@ if [ $EXIT_CODE -ne 0 ]; then
 fi
 
 EXPECTED="Data: dummy content
-Helper output: Hello from helper!"
+Helper output: Hello from helper!
+FileSet paths: [dummy.txt, info.txt]
+FileSet dummy content: dummy content"
 if [ "$OUTPUT" != "$EXPECTED" ]; then
   echo "Error: Unexpected output"
   echo "Expected: $EXPECTED"
