@@ -172,6 +172,9 @@ func (fs FileSpec) MustResolve(opts ...ResolveOption) File {
 }
 
 // ExecutableSpec represents an unresolved executable runfile specification.
+//
+// This typically points to an executable target (like a go_binary, sh_binary,
+// or cc_binary).
 type ExecutableSpec struct {
 	FileSpec
 }
@@ -233,8 +236,11 @@ type Executable struct {
 	File
 }
 
-// Cmd returns an [exec.Cmd] pre-configured to run this executable,
-// with Bazel runfiles environment variables already propagated.
+// Cmd returns an [exec.Cmd] pre-configured to run this executable.
+//
+// It automatically propagates the environment variables returned by
+// [runfiles.Env] (such as RUNFILES_DIR and RUNFILES_MANIFEST_FILE) to the
+// subprocess to ensure it can also locate its runfiles.
 //
 // This method is guaranteed to succeed and does not return an error.
 func (e Executable) Cmd(args ...string) *exec.Cmd {

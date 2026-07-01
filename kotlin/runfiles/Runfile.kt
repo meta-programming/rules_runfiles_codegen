@@ -91,6 +91,8 @@ class FileSpec(
 
 /**
  * Represents an unresolved executable runfile specification.
+ *
+ * This typically points to an executable target (like a kt_jvm_binary or sh_binary).
  */
 class ExecutableSpec(
     /** The logical, runfiles-root-relative path for this executable runfile. */
@@ -133,8 +135,11 @@ class Executable internal constructor(
 ) : File(rlocationPath, path) {
 
     /**
-     * Returns a [ProcessBuilder] pre-configured to run this executable,
-     * with Bazel runfiles environment variables already propagated.
+     * Returns a [ProcessBuilder] pre-configured to run this executable.
+     *
+     * The returned builder has the [envVars] (such as RUNFILES_DIR and
+     * RUNFILES_MANIFEST_FILE) already injected into its environment to ensure
+     * that the launched subprocess can also resolve its own runfiles.
      */
     fun processBuilder(vararg args: String): ProcessBuilder {
         return ProcessBuilder(path.toString(), *args).apply {
