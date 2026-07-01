@@ -6,7 +6,25 @@ load("//internal/emitters:kotlin.bzl", "emit_kotlin")
 
 def _runfile_codegen_impl(ctx):
     language = ctx.attr.language
-    entries = analyze_entries(ctx, ctx.attr.names, ctx.attr.targets, ctx.attr.docs)
+    config_data = json.decode(ctx.attr.config)
+    resolved_targets = ctx.attr.targets
+
+    # Reconstruct the list of entry configs with resolved targets
+    entries_configs = []
+    
+    # We want to maintain order. Dict keys preserve insertion order in Starlark.
+    for name, entry in config_data.items():
+        # Map target indexes back to resolved Target objects
+        entry_targets = [resolved_targets[idx] for idx in entry["target_indexes"]]
+        entries_configs.append({
+            "name": name,
+            "targets": entry_targets,
+            "doc": entry["doc"],
+            "base": entry["base"],
+            "type": entry["type"],
+        })
+
+    entries = analyze_entries(ctx, entries_configs)
 
     if language == "go":
         ext = "go"
@@ -30,9 +48,8 @@ runfile_codegen = rule(
     attrs = {
         "package": attr.string(mandatory = True),
         "language": attr.string(mandatory = True, values = ["go", "kotlin"]),
-        "names": attr.string_list(mandatory = True),
         "targets": attr.label_list(mandatory = True, allow_files = True, providers = [DefaultInfo]),
-        "docs": attr.string_list(mandatory = True),
+        "config": attr.string(mandatory = True), # Serialized JSON config
         "object_name": attr.string(), # Optional, only used/required for Kotlin
     },
 )

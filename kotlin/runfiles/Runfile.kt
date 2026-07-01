@@ -142,3 +142,72 @@ class Executable internal constructor(
         }
     }
 }
+
+/**
+ * Represents an unresolved directory runfile (TreeArtifact) specification.
+ */
+class DirectorySpec(
+    val rlocationPath: RlocationPath
+) {
+    private val fileSpec = FileSpec(rlocationPath)
+
+    fun resolve(resolver: Resolver = Resolver.Default): Directory {
+        val file = fileSpec.resolve(resolver)
+        return Directory(file.rlocationPath, file.path)
+    }
+}
+
+/**
+ * Represents a resolved directory runfile (TreeArtifact).
+ */
+class Directory internal constructor(
+    rlocationPath: RlocationPath,
+    path: Path
+) : File(rlocationPath, path) {
+    /**
+     * Returns a File reference to a file inside this directory.
+     * Note: This does NOT resolve the file via the runfiles resolver,
+     * but simply joins the directory path with the relative path.
+     */
+    fun child(relPath: String): File {
+        return File(
+            RlocationPath("${rlocationPath.value}/$relPath"),
+            path.resolve(relPath)
+        )
+    }
+}
+
+/**
+ * Represents an unresolved fileset of runfiles.
+ */
+class FileSetSpec(
+    val files: Map<String, String> // maps user-facing relPath to canonical rlocation path
+) {
+    fun resolve(resolver: Resolver = Resolver.Default): FileSet {
+        return FileSet(files, resolver)
+    }
+}
+
+/**
+ * Represents a resolved fileset of runfiles.
+ */
+class FileSet internal constructor(
+    val files: Map<String, String>,
+    private val resolver: Resolver
+) {
+    /**
+     * Returns the list of relative paths available in this fileset.
+     */
+    val relPaths: List<String> get() = files.keys.toList()
+
+    /**
+     * Resolves a specific file in the fileset by its relative path.
+     */
+    fun resolveFile(relPath: String): File {
+        val fullRlocation = files[relPath] ?: throw RunfileResolutionException("File $relPath is not in this fileset")
+        val resolvedPath = resolver.rlocation(RlocationPath(fullRlocation))
+            ?: throw RunfileResolutionException("Failed to resolve file: $fullRlocation")
+        return File(RlocationPath(fullRlocation), Paths.get(resolvedPath))
+    }
+}
+

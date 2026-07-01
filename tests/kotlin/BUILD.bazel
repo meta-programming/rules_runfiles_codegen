@@ -1,6 +1,7 @@
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_binary")
 load("@rules_runfile_codegen_kotlin//:defs.bzl", "kt_runfile", "kt_jvm_runfile_library")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//:rules.bzl", "dir_producer")
 
 package(default_visibility = ["//visibility:private"])
 
@@ -13,6 +14,32 @@ kt_jvm_binary(
     deps = [
         "@bazel_tools//tools/java/runfiles",
     ],
+)
+
+filegroup(
+    name = "collection_data",
+    srcs = [
+        "data/collection/file1.txt",
+        "data/collection/file2.txt",
+    ],
+)
+
+filegroup(
+    name = "strict_file_data",
+    srcs = ["data/dummy.txt"],
+)
+
+dir_producer(
+    name = "strict_dir_data",
+)
+
+filegroup(
+    name = "forced_col_data",
+    srcs = ["data/dummy.txt"],
+)
+
+dir_producer(
+    name = "dir_data",
 )
 
 kt_jvm_runfile_library(
@@ -32,6 +59,78 @@ kt_jvm_runfile_library(
             name = "externalFile",
             doc = "An external file from rules_kotlin.",
             target = "@rules_kotlin//:LICENSE",
+        ),
+        kt_runfile(
+            name = "groupData",
+            doc = "A fileset of files with explicit relative base.",
+            target = ":collection_data",
+            base = "./data/collection",
+        ),
+        kt_runfile(
+            name = "groupDataDefault",
+            doc = "A fileset of files with default base.",
+            target = ":collection_data",
+        ),
+        kt_runfile(
+            name = "dirData",
+            doc = "A directory of files.",
+            target = ":dir_data",
+        ),
+        kt_runfile(
+            name = "strictFile",
+            doc = "A file with explicit type assertion.",
+            target = ":strict_file_data",
+            type = "file",
+        ),
+        kt_runfile(
+            name = "strictDir",
+            doc = "A directory with explicit type assertion.",
+            target = ":strict_dir_data",
+            type = "directory",
+        ),
+        kt_runfile(
+            name = "strictFileSet",
+            doc = "A fileset with explicit type assertion.",
+            target = ":collection_data",
+            base = "./data/collection",
+            type = "fileset",
+        ),
+        kt_runfile(
+            name = "forcedFileSet",
+            doc = "A single file forced to be a fileset.",
+            target = ":forced_col_data",
+            type = "fileset",
+        ),
+        kt_runfile(
+            name = "commonDirFileSet",
+            doc = "A fileset using common_dir base.",
+            target = ":collection_data",
+            base = "common_dir",
+        ),
+        # Duplicate targets mapping
+        kt_runfile(
+            name = "duplicateTarget1",
+            doc = "First mapping of collection_data.",
+            target = ":collection_data",
+            base = "./data/collection",
+        ),
+        kt_runfile(
+            name = "duplicateTarget2",
+            doc = "Second mapping of collection_data keeping full path.",
+            target = ":collection_data",
+            base = "",
+        ),
+        # Mixed targets fileset
+        # Note: Since Kotlin tests don't have a separate subdir package with targets,
+        # we can just test multiple targets in the same package (e.g. collection_data + forced_col_data)
+        kt_runfile(
+            name = "mixedFileSet",
+            doc = "A fileset merging collection_data and forced_col_data.",
+            targets = [
+                ":collection_data",
+                ":forced_col_data",
+            ],
+            base = "common_dir",
         ),
     ],
     package = "com.example.project.tests.resources",

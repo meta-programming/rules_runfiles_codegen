@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 
 	"github.com/bazelbuild/rules_go/go/runfiles"
@@ -242,4 +243,129 @@ func (e Executable) Cmd(args ...string) *exec.Cmd {
 		cmd.Env = append(os.Environ(), env...)
 	}
 	return cmd
+}
+
+// ---------------------------------------------------------------------------
+// Directory (TreeArtifact) Support
+// ---------------------------------------------------------------------------
+
+// DirectorySpec represents an unresolved directory runfile (TreeArtifact).
+type DirectorySpec struct {
+	FileSpec
+}
+
+// NewDirectorySpec creates a new unresolved [DirectorySpec] reference.
+func NewDirectorySpec(rlocation RlocationPath) DirectorySpec {
+	return DirectorySpec{FileSpec: NewSpec(rlocation)}
+}
+
+// Resolve attempts to find the directory on disk.
+func (ds DirectorySpec) Resolve(opts ...ResolveOption) (Directory, error) {
+	f, err := ds.FileSpec.Resolve(opts...)
+	if err != nil {
+		return Directory{}, err
+	}
+	return Directory{File: f}, nil
+}
+
+// MustResolve is like [DirectorySpec.Resolve] but panics if the directory cannot be found.
+func (ds DirectorySpec) MustResolve(opts ...ResolveOption) Directory {
+	d, err := ds.Resolve(opts...)
+	if err != nil {
+		panic(err)
+	}
+	return d
+}
+
+// Directory represents a resolved directory runfile.
+type Directory struct {
+	File
+}
+
+// Child returns a File reference to a file inside this directory.
+// Note: This does NOT resolve the file via the runfiles resolver,
+// but simply joins the directory path with the relative path.
+func (d Directory) Child(relPath string) File {
+	return File{
+		rlocation: d.rlocation + "/" + RlocationPath(relPath),
+		absPath:   filepath.Join(d.Path(), relPath),
+	}
+}
+
+// ---------------------------------------------------------------------------
+// FileSet Support
+// ---------------------------------------------------------------------------
+
+// FileSetSpec represents an unresolved fileset of runfiles.
+type FileSetSpec struct {
+	files map[string]string // maps user-facing relPath to canonical rlocation path
+}
+
+// NewFileSetSpec creates a new unresolved [FileSetSpec] reference.
+func NewFileSetSpec(files map[string]string) FileSetSpec {
+	return FileSetSpec{files: files}
+}
+
+// Resolve attempts to prepare the fileset for resolution.
+func (fss FileSetSpec) Resolve(opts ...ResolveOption) (FileSet, error) {
+	var o resolveOpts
+	for _, opt := range opts {
+		opt(&o)
+	}
+	resolver := o.resolver
+	if resolver == nil {
+		var err error
+		resolver, err = getDefaultResolver()
+		if err != nil {
+			return FileSet{}, fmt.Errorf("default runfiles resolver initialization failed: %w", err)
+		}
+	}
+	return FileSet{files: fss.files, resolver: resolver}, nil
+}
+
+// MustResolve is like [FileSetSpec.Resolve] but panics if the resolver cannot be initialized.
+func (fss FileSetSpec) MustResolve(opts ...ResolveOption) FileSet {
+	fs, err := fss.Resolve(opts...)
+	if err != nil {
+		panic(err)
+	}
+	return fs
+}
+
+// FileSet represents a resolved fileset of runfiles.
+type FileSet struct {
+	files    map[string]string // maps user-facing relPath to canonical rlocation path
+	resolver Resolver
+}
+
+// RelPaths returns the list of relative paths in this fileset.
+func (fs FileSet) RelPaths() []string {
+	paths := make([]string, 0, len(fs.files))
+	for p := range fs.files {
+		paths = append(paths, p)
+	}
+	return paths
+}
+
+// ResolveFile resolves a specific file in the fileset by its relative path.
+func (fs FileSet) ResolveFile(relPath string) (File, error) {
+	fullRlocation, ok := fs.files[relPath]
+	if !ok {
+		return File{}, fmt.Errorf("file %q is not in this fileset", relPath)
+	}
+
+	absPath, err := fs.resolver.Rlocation(fullRlocation)
+	if err != nil {
+		return File{}, fmt.Errorf("failed to resolve file %q: %w", fullRlocation, err)
+	}
+	return File{rlocation: RlocationPath(fullRlocation), absPath: absPath}, nil
+}
+
+// MustResolveFile is like [FileSet.ResolveFile] but panics if the file cannot be resolved.
+func (fs FileSet) MustResolveFile(relPath string) File {
+	file, err := fs.ResolveFile(relPath)
+	if err != nil {
+		panic(err)
+	}
+	return file
 }

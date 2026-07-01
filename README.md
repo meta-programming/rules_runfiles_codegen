@@ -316,6 +316,8 @@ package com.example.project.examples.resources
 
 import com.github.metaprogramming.runfiles.FileSpec
 import com.github.metaprogramming.runfiles.ExecutableSpec
+import com.github.metaprogramming.runfiles.DirectorySpec
+import com.github.metaprogramming.runfiles.FileSetSpec
 import com.github.metaprogramming.runfiles.RlocationPath
 
 object Resources {
