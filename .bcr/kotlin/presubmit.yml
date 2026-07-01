@@ -7,5 +7,4 @@ tasks:
     platform: ${{ platform }}
     bazel: ${{ bazel }}
     build_targets:
-      - "@rules_runfile_codegen_kotlin//:defs_bzl"
       - "@rules_runfile_codegen_kotlin//runfiles:runfiles"
