@@ -48,20 +48,20 @@ fun main() {
         throw RuntimeException("FileSet paths mismatch: got $paths, want $expectedPaths")
     }
     
-    val f1 = fileset.resolveFile("file1.txt")
+    val f1 = fileset["file1.txt"]
     val content1 = f1.path.readText().trim()
     if (content1 != "content of file 1 kt") {
         throw RuntimeException("file1.txt content mismatch: got '$content1', want 'content of file 1 kt'")
     }
 
-    val f2 = fileset.resolveFile("file2.txt")
+    val f2 = fileset["file2.txt"]
     val content2 = f2.path.readText().trim()
     if (content2 != "content of file 2 kt") {
         throw RuntimeException("file2.txt content mismatch: got '$content2', want 'content of file 2 kt'")
     }
 
     try {
-        fileset.resolveFile("non-existent.txt")
+        fileset["non-existent.txt"]
         throw RuntimeException("Expected exception when resolving non-existent.txt, but it succeeded")
     } catch (e: Exception) {
         // Expected
@@ -75,7 +75,7 @@ fun main() {
         throw RuntimeException("FileSet default paths mismatch: got $defaultPaths, want $expectedDefaultPaths")
     }
     
-    val f1Default = defaultFileSet.resolveFile("data/collection/file1.txt")
+    val f1Default = defaultFileSet["data/collection/file1.txt"]
     val content1Default = f1Default.path.readText().trim()
     if (content1Default != "content of file 1 kt") {
         throw RuntimeException("file1Default.txt content mismatch: got '$content1Default', want 'content of file 1 kt'")
@@ -115,7 +115,7 @@ fun main() {
     if (forcedFileSet.relPaths != listOf("data/dummy.txt")) {
         throw RuntimeException("ForcedFileSet paths mismatch: got ${forcedFileSet.relPaths}")
     }
-    val fc1 = forcedFileSet.resolveFile("data/dummy.txt")
+    val fc1 = forcedFileSet["data/dummy.txt"]
     if (fc1.path.readText().trim() != "dummy content") {
         throw RuntimeException("ForcedFileSet file content mismatch")
     }
@@ -124,7 +124,7 @@ fun main() {
     if (commonDirFileSet.relPaths.sorted() != listOf("file1.txt", "file2.txt")) {
         throw RuntimeException("commonDirFileSet paths mismatch: got ${commonDirFileSet.relPaths}")
     }
-    val lpg1 = commonDirFileSet.resolveFile("file1.txt")
+    val lpg1 = commonDirFileSet["file1.txt"]
     if (lpg1.path.readText().trim() != "content of file 1 kt") {
         throw RuntimeException("commonDirFileSet file1 content mismatch")
     }
@@ -155,11 +155,11 @@ fun main() {
         throw RuntimeException("mixedFileSet paths mismatch: got ${mixedFs.relPaths.sorted()}, want $expectedMixedPaths")
     }
 
-    val m1 = mixedFs.resolveFile("collection/file1.txt")
+    val m1 = mixedFs["collection/file1.txt"]
     if (m1.path.readText().trim() != "content of file 1 kt") {
         throw RuntimeException("mixedFileSet file1 content mismatch")
     }
-    val m2 = mixedFs.resolveFile("dummy.txt")
+    val m2 = mixedFs["dummy.txt"]
     if (m2.path.readText().trim() != "dummy content") {
         throw RuntimeException("mixedFileSet dummy content mismatch")
     }
@@ -170,11 +170,11 @@ fun main() {
     if (mockRepoFs.relPaths.sorted() != expectedMockRepoPaths) {
         throw RuntimeException("mockRepoGroup paths mismatch: got ${mockRepoFs.relPaths.sorted()}, want $expectedMockRepoPaths")
     }
-    val mr1 = mockRepoFs.resolveFile("file1.txt")
+    val mr1 = mockRepoFs["file1.txt"]
     if (mr1.path.readText().trim() != "mock file 1") {
         throw RuntimeException("mockRepoGroup file1 content mismatch: got '${mr1.path.readText().trim()}'")
     }
-    val mr2 = mockRepoFs.resolveFile("file2.txt")
+    val mr2 = mockRepoFs["file2.txt"]
     if (mr2.path.readText().trim() != "mock file 2") {
         throw RuntimeException("mockRepoGroup file2 content mismatch: got '${mr2.path.readText().trim()}'")
     }

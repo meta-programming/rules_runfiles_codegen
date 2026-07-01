@@ -43,7 +43,7 @@ func main() {
 	paths := exampleSet.RelPaths()
 	sort.Strings(paths)
 	fmt.Printf("FileSet paths: %v\n", paths)
-	f1, err := exampleSet.ResolveFile("dummy.txt")
+	f1, err := exampleSet.File("dummy.txt")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error resolving dummy.txt: %v\n", err)
 		os.Exit(1)

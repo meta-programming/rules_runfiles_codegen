@@ -106,7 +106,7 @@ func TestGroupData(t *testing.T) {
 	}
 
 	// Resolve individual files
-	f1, err := fileset.ResolveFile("file1.txt")
+	f1, err := fileset.File("file1.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve file1.txt: %v", err)
 	}
@@ -118,7 +118,7 @@ func TestGroupData(t *testing.T) {
 		t.Errorf("file1.txt content = %q, want %q", string(content1), "content of file 1")
 	}
 
-	f2, err := fileset.ResolveFile("file2.txt")
+	f2, err := fileset.File("file2.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve file2.txt: %v", err)
 	}
@@ -131,7 +131,7 @@ func TestGroupData(t *testing.T) {
 	}
     
 	// Test resolve non-existent file
-	_, err = fileset.ResolveFile("non-existent.txt")
+	_, err = fileset.File("non-existent.txt")
 	if err == nil {
 		t.Error("Expected error resolving non-existent.txt, got nil")
 	}
@@ -157,7 +157,7 @@ func TestGroupDataDefault(t *testing.T) {
 		}
 	}
 
-	f1, err := fileset.ResolveFile("data/collection/file1.txt")
+	f1, err := fileset.File("data/collection/file1.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve file1.txt: %v", err)
 	}
@@ -240,7 +240,7 @@ func TestMixedGroup(t *testing.T) {
 		}
 	}
 
-	dirFile, err := fileset.ResolveFile("dir_data")
+	dirFile, err := fileset.File("dir_data")
 	if err != nil {
 		t.Fatalf("Failed to resolve dir_data: %v", err)
 	}
@@ -298,7 +298,7 @@ func TestDistantGroup(t *testing.T) {
 		}
 	}
 
-	f1, err := fileset.ResolveFile("data/dummy.txt")
+	f1, err := fileset.File("data/dummy.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve data/dummy.txt: %v", err)
 	}
@@ -329,7 +329,7 @@ func TestSubGroupPackageRelative(t *testing.T) {
 		}
 	}
 
-	f1, err := fileset.ResolveFile("file1.txt")
+	f1, err := fileset.File("file1.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve file1.txt: %v", err)
 	}
@@ -360,7 +360,7 @@ func TestSubGroupRepoRelative(t *testing.T) {
 		}
 	}
 
-	f1, err := fileset.ResolveFile("file1.txt")
+	f1, err := fileset.File("file1.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve file1.txt: %v", err)
 	}
@@ -391,7 +391,7 @@ func TestDistantGroupFiltered(t *testing.T) {
 		}
 	}
 
-	f1, err := fileset.ResolveFile("dummy.txt")
+	f1, err := fileset.File("dummy.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve dummy.txt: %v", err)
 	}
@@ -403,7 +403,7 @@ func TestDistantGroupFiltered(t *testing.T) {
 		t.Errorf("dummy.txt content = %q, want %q", string(content1), "dummy content")
 	}
 
-	_, err = fileset.ResolveFile("rules_go+/LICENSE.txt")
+	_, err = fileset.File("rules_go+/LICENSE.txt")
 	if err == nil {
 		t.Errorf("Expected resolution of filtered out file to fail, but it succeeded")
 	}
@@ -427,7 +427,7 @@ func TestDistantGroupUnfiltered(t *testing.T) {
 		}
 	}
 
-	f1, err := fileset.ResolveFile("_main/data/dummy.txt")
+	f1, err := fileset.File("_main/data/dummy.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve _main/data/dummy.txt: %v", err)
 	}
@@ -439,7 +439,7 @@ func TestDistantGroupUnfiltered(t *testing.T) {
 		t.Errorf("dummy.txt content = %q, want %q", string(content1), "dummy content")
 	}
 
-	f2, err := fileset.ResolveFile("rules_go+/LICENSE.txt")
+	f2, err := fileset.File("rules_go+/LICENSE.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve rules_go+/LICENSE.txt: %v", err)
 	}
@@ -470,7 +470,7 @@ func TestMockRepoGroup(t *testing.T) {
 		}
 	}
 
-	f1, err := fileset.ResolveFile("file1.txt")
+	f1, err := fileset.File("file1.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve file1.txt: %v", err)
 	}
@@ -482,7 +482,7 @@ func TestMockRepoGroup(t *testing.T) {
 		t.Errorf("file1.txt content = %q, want %q", string(content1), "mock file 1")
 	}
 
-	f2, err := fileset.ResolveFile("file2.txt")
+	f2, err := fileset.File("file2.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve file2.txt: %v", err)
 	}
@@ -547,7 +547,7 @@ func TestForcedFileSet(t *testing.T) {
 		t.Fatalf("ForcedFileSet has %d paths, want %d. Got: %v", len(paths), len(expectedPaths), paths)
 	}
 	
-	f1, err := fileset.ResolveFile("data/dummy.txt")
+	f1, err := fileset.File("data/dummy.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve dummy.txt from ForcedFileSet: %v", err)
 	}
@@ -572,7 +572,7 @@ func TestCommonDirFileSet(t *testing.T) {
 		t.Fatalf("CommonDirFileSet has %d paths, want %d. Got: %v", len(paths), len(expectedPaths), paths)
 	}
 	
-	f1, err := fileset.ResolveFile("file1.txt")
+	f1, err := fileset.File("file1.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve file1.txt: %v", err)
 	}
@@ -638,7 +638,7 @@ func TestMixedFileSet(t *testing.T) {
 	}
 
 	// Resolve a file from local target
-	f1, err := fs.ResolveFile("data/collection/file1.txt")
+	f1, err := fs.File("data/collection/file1.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve local file in MixedFileSet: %v", err)
 	}
@@ -651,7 +651,7 @@ func TestMixedFileSet(t *testing.T) {
 	}
 
 	// Resolve a file from subdir target
-	sf1, err := fs.ResolveFile("subdir/sub_data/file1.txt")
+	sf1, err := fs.File("subdir/sub_data/file1.txt")
 	if err != nil {
 		t.Fatalf("Failed to resolve subdir file in MixedFileSet: %v", err)
 	}

@@ -220,9 +220,10 @@ class FileSet internal constructor(
     val relPaths: List<String> get() = files.keys.toList()
 
     /**
-     * Resolves a specific file in the fileset by its relative path.
+     * Returns a specific file in the fileset by its relative path.
+     * Throws RunfileResolutionException if the file is not in this fileset.
      */
-    fun resolveFile(relPath: String): File {
+    operator fun get(relPath: String): File {
         return files[relPath] ?: throw RunfileResolutionException("File $relPath is not in this fileset")
     }
 }

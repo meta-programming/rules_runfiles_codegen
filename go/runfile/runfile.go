@@ -372,8 +372,8 @@ func (fs FileSet) RelPaths() []string {
 	return paths
 }
 
-// ResolveFile resolves a specific file in the fileset by its relative path.
-func (fs FileSet) ResolveFile(relPath string) (File, error) {
+// File returns a specific file in the fileset by its relative path.
+func (fs FileSet) File(relPath string) (File, error) {
 	file, ok := fs.files[relPath]
 	if !ok {
 		return File{}, fmt.Errorf("file %q is not in this fileset", relPath)
@@ -381,9 +381,9 @@ func (fs FileSet) ResolveFile(relPath string) (File, error) {
 	return file, nil
 }
 
-// MustResolveFile is like [FileSet.ResolveFile] but panics if the file cannot be resolved.
-func (fs FileSet) MustResolveFile(relPath string) File {
-	file, err := fs.ResolveFile(relPath)
+// MustFile is like [FileSet.File] but panics if the file is not found.
+func (fs FileSet) MustFile(relPath string) File {
+	file, err := fs.File(relPath)
 	if err != nil {
 		panic(err)
 	}
