@@ -145,6 +145,8 @@ class Executable internal constructor(
 
 /**
  * Represents an unresolved directory runfile (TreeArtifact) specification.
+ *
+ * See [Bazel Tree Artifacts](https://bazel.build/extending/rules#tree_artifacts) for details.
  */
 class DirectorySpec(
     val rlocationPath: RlocationPath
@@ -159,6 +161,8 @@ class DirectorySpec(
 
 /**
  * Represents a resolved directory runfile (TreeArtifact).
+ *
+ * See [Bazel Tree Artifacts](https://bazel.build/extending/rules#tree_artifacts) for details.
  */
 class Directory internal constructor(
     rlocationPath: RlocationPath,

@@ -250,6 +250,8 @@ func (e Executable) Cmd(args ...string) *exec.Cmd {
 // ---------------------------------------------------------------------------
 
 // DirectorySpec represents an unresolved directory runfile (TreeArtifact).
+//
+// See https://bazel.build/extending/rules#tree_artifacts for details.
 type DirectorySpec struct {
 	FileSpec
 }
@@ -277,7 +279,9 @@ func (ds DirectorySpec) MustResolve(opts ...ResolveOption) Directory {
 	return d
 }
 
-// Directory represents a resolved directory runfile.
+// Directory represents a resolved directory runfile (TreeArtifact).
+//
+// See https://bazel.build/extending/rules#tree_artifacts for details.
 type Directory struct {
 	File
 }
