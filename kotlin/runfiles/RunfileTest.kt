@@ -98,4 +98,13 @@ class RunfileTest {
         assertNotNull(file.path)
         assertTrue(file.path.toFile().exists())
     }
+
+    @Test
+    fun testPathShortcut() {
+        val spec = FileSpec(RlocationPath("rules_runfile_codegen_kotlin/runfiles/Runfile.kt"))
+        val resolvedPath = spec.path
+        assertNotNull(resolvedPath)
+        assertTrue(resolvedPath.toFile().exists())
+        assertEquals(spec.resolve().path, resolvedPath)
+    }
 }

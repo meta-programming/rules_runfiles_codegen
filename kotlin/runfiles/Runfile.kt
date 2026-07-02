@@ -87,6 +87,9 @@ class FileSpec(
             ?: throw RunfileResolutionException("Failed to resolve runfile: ${rlocationPath.value}")
         return File(rlocationPath, Paths.get(resolvedPath))
     }
+
+    /** The physical, absolute path to the runfile on disk. */
+    val path: Path get() = resolve().path
 }
 
 /**
@@ -107,6 +110,9 @@ class ExecutableSpec(
         val file = fileSpec.resolve(resolver)
         return Executable(file.rlocationPath, file.path, resolver.envVars)
     }
+
+    /** The physical, absolute path to the executable runfile on disk. */
+    val path: Path get() = resolve().path
 }
 
 /**
@@ -162,6 +168,9 @@ class DirectorySpec(
         val file = fileSpec.resolve(resolver)
         return Directory(file.rlocationPath, file.path)
     }
+
+    /** The physical, absolute path to the directory runfile on disk. */
+    val path: Path get() = resolve().path
 }
 
 /**
