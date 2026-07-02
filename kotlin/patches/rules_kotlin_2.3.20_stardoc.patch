@@ -1,0 +1,12 @@
+diff --git a/kotlin/internal/jvm/BUILD.bazel b/kotlin/internal/jvm/BUILD.bazel
+index 47192ea..c23143b 100644
+--- a/kotlin/internal/jvm/BUILD.bazel
++++ b/kotlin/internal/jvm/BUILD.bazel
+@@ -27,4 +27,5 @@ bzl_library(
+     deps = [
+         "//third_party:bzl",
+         "@bazel_skylib//lib:sets",
+         "@bazel_skylib//rules:common_settings",
++        "//src/main/starlark/core/plugin:plugin",
+     ],
+ )
