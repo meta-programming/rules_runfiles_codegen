@@ -28,7 +28,7 @@ To use these rules in your Go project, add the following to your `MODULE.bazel` 
 <!-- GO_INSTALL_START -->
 ```bazel
 # MODULE.bazel
-bazel_dep(name = "rules_runfile_codegen_go", version = "0.1.1")
+bazel_dep(name = "rules_runfile_codegen_go", version = "0.1.2")
 ```
 <!-- GO_INSTALL_END -->
 
@@ -194,7 +194,7 @@ To use these rules in your Kotlin project, add the following to your `MODULE.baz
 <!-- KOTLIN_INSTALL_START -->
 ```bazel
 # MODULE.bazel
-bazel_dep(name = "rules_runfile_codegen_kotlin", version = "0.1.1")
+bazel_dep(name = "rules_runfile_codegen_kotlin", version = "0.1.2")
 ```
 <!-- KOTLIN_INSTALL_END -->
 
@@ -269,7 +269,7 @@ import kotlin.io.path.readText
 fun main() {
     // 1. Access the resolved runfile path.
     // Resolve the spec and read its content directly using Path.readText().
-    val content = Resources.configJson.resolve().path.readText().trim()
+    val content = Resources.configJson.path.readText().trim()
     println("Data: $content")
 
     // 2. Run an executable runfile with env propagation.
@@ -284,8 +284,10 @@ fun main() {
     // 3. Access a fileset of runfiles (FileSet).
     val exampleSet = Resources.exampleSet.resolve()
     println("FileSet paths: ${exampleSet.relPaths.sorted()}")
-    val f1 = exampleSet["dummy.txt"]
-    println("FileSet dummy content: ${f1.path.readText().trim()}")
+    
+    // Access a path inside the fileset using the shortcut:
+    val dummyContent = Resources.exampleSet["dummy.txt"].path.readText().trim()
+    println("FileSet dummy content: $dummyContent")
 }
 ```
 <!-- KOTLIN_USAGE_END -->
