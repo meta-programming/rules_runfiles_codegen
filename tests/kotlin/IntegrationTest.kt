@@ -1,6 +1,7 @@
 package com.example.project.tests
 
 import com.example.project.tests.resources.TestResources
+import com.github.metaprogramming.runfiles.ExecutableSpec
 import kotlin.io.path.readText
 
 fun main() {
@@ -22,23 +23,9 @@ fun main() {
         throw RuntimeException("External file content doesn't look like a LICENSE: $schemaContent")
     }
 
-    // Executable test
-    val helper = TestResources.helperTool.resolve()
-    val process = helper.processBuilder().start()
-    val stdout = process.inputStream.bufferedReader().readText().trim()
-    val stderr = process.errorStream.bufferedReader().readText().trim()
-    val exitCode = process.waitFor()
-
-    println("Helper stdout: $stdout")
-    println("Helper stderr: $stderr")
-
-    if (exitCode != 0) {
-        throw RuntimeException("Helper exited with code $exitCode. Stderr: $stderr")
-    }
-
-    if (stdout != "helper data content") {
-        throw RuntimeException("Helper output mismatch: got '$stdout', want 'helper data content'")
-    }
+    // Executable tests
+    assertExecutable("helperTool", TestResources.helperTool)
+    assertExecutable("explicitExecutable", TestResources.explicitExecutable)
 
     // FileSet test
     val fileset = TestResources.groupData.resolve()
@@ -180,4 +167,23 @@ fun main() {
     }
 
     println("All tests passed!")
+}
+
+private fun assertExecutable(name: String, spec: ExecutableSpec) {
+    val helper = spec.resolve()
+    val process = helper.processBuilder().start()
+    val stdout = process.inputStream.bufferedReader().readText().trim()
+    val stderr = process.errorStream.bufferedReader().readText().trim()
+    val exitCode = process.waitFor()
+
+    println("$name stdout: $stdout")
+    println("$name stderr: $stderr")
+
+    if (exitCode != 0) {
+        throw RuntimeException("$name exited with code $exitCode. Stderr: $stderr")
+    }
+
+    if (stdout != "helper data content") {
+        throw RuntimeException("$name output mismatch: got '$stdout', want 'helper data content'")
+    }
 }

@@ -27,6 +27,7 @@ def go_runfile(name, target = None, targets = None, doc = "", base = None, type 
             - `"file"`: Asserts the target is a single file.
             - `"directory"`: Asserts the target is a TreeArtifact directory.
             - `"fileset"`: Forces the target to be treated as a FileSet.
+            - `"executable"`: Asserts the target is an executable binary.
 
     Returns:
         A dictionary containing the configured runfile entry.

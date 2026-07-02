@@ -1,6 +1,6 @@
-load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_binary")
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_binary", "kt_jvm_library")
+load("@rules_java//java:defs.bzl", "java_test")
 load("@rules_runfile_codegen_kotlin//:defs.bzl", "kt_runfile", "kt_jvm_runfile_library")
-load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:rules.bzl", "dir_producer")
 
 package(default_visibility = ["//visibility:private"])
@@ -54,6 +54,12 @@ kt_jvm_runfile_library(
             name = "helperTool",
             doc = "A helper tool executable.",
             target = ":helper_bin",
+        ),
+        kt_runfile(
+            name = "explicitExecutable",
+            doc = "An executable with explicit type assertion.",
+            target = ":helper_bin",
+            type = "executable",
         ),
         kt_runfile(
             name = "externalFile",
@@ -142,20 +148,20 @@ kt_jvm_runfile_library(
     package = "com.example.project.tests.resources",
 )
 
-# Binary that runs the assertions
-kt_jvm_binary(
-    name = "integration_test_bin",
+kt_jvm_library(
+    name = "integration_test_lib",
     srcs = ["IntegrationTest.kt"],
-    main_class = "com.example.project.tests.IntegrationTestKt",
     deps = [
         ":test-resources",
         "@bazel_tools//tools/java/runfiles",
     ],
 )
 
-# sh_test that wraps the binary
-sh_test(
+java_test(
     name = "integration_test",
-    srcs = ["run_test.sh"],
-    data = [":integration_test_bin"],
+    main_class = "com.example.project.tests.IntegrationTestKt",
+    use_testrunner = False,
+    runtime_deps = [
+        ":integration_test_lib",
+    ],
 )

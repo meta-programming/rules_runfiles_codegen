@@ -5,6 +5,7 @@ module(
 
 bazel_dep(name = "rules_kotlin", version = "2.3.20")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_java", version = "8.6.1")
 bazel_dep(name = "rules_shell", version = "0.8.0")
 bazel_dep(name = "rules_runfile_codegen_kotlin", version = "0.0.0")
 bazel_dep(name = "rules_runfile_codegen_core", version = "0.0.0")

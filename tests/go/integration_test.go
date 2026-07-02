@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/example/project/repo/tests/go/test_resources"
+	"github.com/meta-programming/rules_runfiles_codegen/go/runfile"
 )
 
 func TestSingleFile(t *testing.T) {
@@ -38,25 +39,43 @@ func TestSingleFile(t *testing.T) {
 	}
 }
 
-func TestExecutableFile(t *testing.T) {
-	resolved, err := test_resources.ExecutableFile.Resolve()
-	if err != nil {
-		t.Fatalf("Failed to resolve ExecutableFile: %v", err)
+func TestExecutable(t *testing.T) {
+	tests := []struct {
+		name string
+		spec runfile.ExecutableSpec
+	}{
+		{
+			name: "ExecutableFile (auto)",
+			spec: test_resources.ExecutableFile,
+		},
+		{
+			name: "ExplicitExecutable (explicit)",
+			spec: test_resources.ExplicitExecutable,
+		},
 	}
 
-	cmd := resolved.Cmd()
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			resolved, err := tc.spec.Resolve()
+			if err != nil {
+				t.Fatalf("Failed to resolve: %v", err)
+			}
 
-	if err := cmd.Run(); err != nil {
-		t.Fatalf("Failed to run ExecutableFile: %v\nStderr: %s", err, stderr.String())
-	}
+			cmd := resolved.Cmd()
+			var stdout, stderr bytes.Buffer
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
 
-	expected := "helper data content"
-	got := strings.TrimSpace(stdout.String())
-	if got != expected {
-		t.Errorf("HelperTool output = %q, want %q\nStderr: %s", got, expected, stderr.String())
+			if err := cmd.Run(); err != nil {
+				t.Fatalf("Failed to run: %v\nStderr: %s", err, stderr.String())
+			}
+
+			expected := "helper data content"
+			got := strings.TrimSpace(stdout.String())
+			if got != expected {
+				t.Errorf("Output = %q, want %q\nStderr: %s", got, expected, stderr.String())
+			}
+		})
 	}
 }
 
