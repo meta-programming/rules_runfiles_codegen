@@ -221,5 +221,6 @@ go_test(
     srcs = ["integration_test.go"],
     deps = [
         "//:test_resources",
+        "@rules_runfile_codegen_go//runfile",
     ],
 )
