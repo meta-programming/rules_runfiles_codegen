@@ -57,8 +57,8 @@ kt_jvm_runfile_library(
         ),
         kt_runfile(
             name = "externalFile",
-            doc = "An external file from rules_kotlin.",
-            target = "@rules_kotlin//:LICENSE",
+            doc = "An external file from bazel_skylib.",
+            target = "@bazel_skylib//:LICENSE",
         ),
         kt_runfile(
             name = "groupData",
