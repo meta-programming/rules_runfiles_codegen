@@ -10,7 +10,7 @@ fun main() {
     println("Data: $content")
 
     // 2. Run an executable runfile with env propagation.
-    val process = Resources.helperTool.resolve().processBuilder().start()
+    val process = Resources.helperTool.processBuilder().start()
     val output = process.inputStream.reader().use { it.readText() }.trim()
     val exitCode = process.waitFor()
     if (exitCode != 0) {

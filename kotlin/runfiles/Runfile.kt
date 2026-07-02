@@ -113,6 +113,16 @@ class ExecutableSpec(
 
     /** The physical, absolute path to the executable runfile on disk. */
     val path: Path get() = resolve().path
+
+    /**
+     * Returns a [ProcessBuilder] pre-configured to run this executable.
+     *
+     * @param args The arguments to pass to the executable.
+     * @param resolver The resolver to use. Defaults to the default Bazel resolver.
+     */
+    fun processBuilder(vararg args: String, resolver: Resolver = Resolver.Default): ProcessBuilder {
+        return resolve(resolver).processBuilder(*args)
+    }
 }
 
 /**

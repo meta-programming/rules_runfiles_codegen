@@ -74,6 +74,12 @@ class RunfileTest {
         assertEquals(listOf(absPath, "arg1", "arg2"), pb.command())
         assertEquals("value1", pb.environment()["VAR1"])
         assertEquals("value2", pb.environment()["VAR2"])
+
+        // Test the shortcut directly on the ExecutableSpec
+        val pbDirect = spec.processBuilder("arg1", "arg2", resolver = mockResolver)
+        assertEquals(listOf(absPath, "arg1", "arg2"), pbDirect.command())
+        assertEquals("value1", pbDirect.environment()["VAR1"])
+        assertEquals("value2", pbDirect.environment()["VAR2"])
     }
 
     @Test
