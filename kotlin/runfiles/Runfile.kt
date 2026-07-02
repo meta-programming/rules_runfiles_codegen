@@ -87,6 +87,9 @@ class FileSpec(
             ?: throw RunfileResolutionException("Failed to resolve runfile: ${rlocationPath.value}")
         return File(rlocationPath, Paths.get(resolvedPath))
     }
+
+    /** The physical, absolute path to the runfile on disk. */
+    val path: Path get() = resolve().path
 }
 
 /**
@@ -106,6 +109,19 @@ class ExecutableSpec(
     fun resolve(resolver: Resolver = Resolver.Default): Executable {
         val file = fileSpec.resolve(resolver)
         return Executable(file.rlocationPath, file.path, resolver.envVars)
+    }
+
+    /** The physical, absolute path to the executable runfile on disk. */
+    val path: Path get() = resolve().path
+
+    /**
+     * Returns a [ProcessBuilder] pre-configured to run this executable.
+     *
+     * @param args The arguments to pass to the executable.
+     * @param resolver The resolver to use. Defaults to the default Bazel resolver.
+     */
+    fun processBuilder(vararg args: String, resolver: Resolver = Resolver.Default): ProcessBuilder {
+        return resolve(resolver).processBuilder(*args)
     }
 }
 
@@ -162,6 +178,9 @@ class DirectorySpec(
         val file = fileSpec.resolve(resolver)
         return Directory(file.rlocationPath, file.path)
     }
+
+    /** The physical, absolute path to the directory runfile on disk. */
+    val path: Path get() = resolve().path
 }
 
 /**
@@ -202,6 +221,15 @@ class FileSetSpec(
             File(RlocationPath(rloc), Paths.get(resolvedPath))
         }
         return FileSet(resolvedFiles)
+    }
+
+    /**
+     * Returns an unresolved [FileSpec] for a file in this fileset by its relative path.
+     * Throws RunfileResolutionException if the file is not in this fileset.
+     */
+    operator fun get(relPath: String): FileSpec {
+        val rloc = files[relPath] ?: throw RunfileResolutionException("File $relPath is not in this fileset")
+        return FileSpec(RlocationPath(rloc))
     }
 }
 
