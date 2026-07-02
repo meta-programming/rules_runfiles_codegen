@@ -1,0 +1,2 @@
+# Empty BUILD file to make patches a package.
+exports_files(["rules_kotlin_2.3.20_stardoc.patch"])

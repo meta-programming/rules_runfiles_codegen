@@ -1,0 +1,18 @@
+This patch fixes a Stardoc documentation generation failure when using rules_kotlin 2.3.20.
+Stardoc (via starlark_doc_extract) requires all transitively loaded .bzl files to be
+explicitly declared in bzl_library dependencies. rules_kotlin 2.3.20's jvm bzl_library
+target misses the dependency on //src/main/starlark/core/plugin:plugin, which causes
+Stardoc to fail. This patch adds the missing dependency.
+
+diff --git a/kotlin/internal/jvm/BUILD.bazel b/kotlin/internal/jvm/BUILD.bazel
+index 47192ea..c23143b 100644
+--- a/kotlin/internal/jvm/BUILD.bazel
++++ b/kotlin/internal/jvm/BUILD.bazel
+@@ -27,4 +27,5 @@ bzl_library(
+     deps = [
+         "//third_party:bzl",
+         "@bazel_skylib//lib:sets",
+         "@bazel_skylib//rules:common_settings",
++        "//src/main/starlark/core/plugin:plugin",
+     ],
+ )
