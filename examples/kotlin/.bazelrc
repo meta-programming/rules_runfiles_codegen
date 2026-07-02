@@ -1,1 +1,2 @@
-try-import %workspace%/../../.bazelrc
+build --incompatible_disallow_empty_glob=false
+test --incompatible_disallow_empty_glob=false
