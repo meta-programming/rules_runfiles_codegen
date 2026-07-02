@@ -164,6 +164,10 @@ def analyze_entries(ctx, entries_configs):
                 resolved_type = "fileset"
             else:
                 resolved_type = "file"
+        elif resolved_type == "executable":
+            if not is_executable:
+                fail("Entry '%s' does not produce an executable, but type 'executable' was expected." % name)
+            resolved_type = "file"
                 
         if resolved_type == "group":
             resolved_type = "fileset"

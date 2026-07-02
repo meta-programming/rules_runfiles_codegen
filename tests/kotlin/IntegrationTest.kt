@@ -40,6 +40,24 @@ fun main() {
         throw RuntimeException("Helper output mismatch: got '$stdout', want 'helper data content'")
     }
 
+    // Explicit executable test
+    val explicitHelper = TestResources.explicitExecutable.resolve()
+    val explicitProcess = explicitHelper.processBuilder().start()
+    val explicitStdout = explicitProcess.inputStream.bufferedReader().readText().trim()
+    val explicitStderr = explicitProcess.errorStream.bufferedReader().readText().trim()
+    val explicitExitCode = explicitProcess.waitFor()
+
+    println("Explicit helper stdout: $explicitStdout")
+    println("Explicit helper stderr: $explicitStderr")
+
+    if (explicitExitCode != 0) {
+        throw RuntimeException("Explicit helper exited with code $explicitExitCode. Stderr: $explicitStderr")
+    }
+
+    if (explicitStdout != "helper data content") {
+        throw RuntimeException("Explicit helper output mismatch: got '$explicitStdout', want 'helper data content'")
+    }
+
     // FileSet test
     val fileset = TestResources.groupData.resolve()
     val paths = fileset.relPaths.sorted()

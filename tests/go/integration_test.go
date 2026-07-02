@@ -60,6 +60,28 @@ func TestExecutableFile(t *testing.T) {
 	}
 }
 
+func TestExplicitExecutable(t *testing.T) {
+	resolved, err := test_resources.ExplicitExecutable.Resolve()
+	if err != nil {
+		t.Fatalf("Failed to resolve ExplicitExecutable: %v", err)
+	}
+
+	cmd := resolved.Cmd()
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("Failed to run ExplicitExecutable: %v\nStderr: %s", err, stderr.String())
+	}
+
+	expected := "helper data content"
+	got := strings.TrimSpace(stdout.String())
+	if got != expected {
+		t.Errorf("ExplicitExecutable output = %q, want %q\nStderr: %s", got, expected, stderr.String())
+	}
+}
+
 func TestExternalFile(t *testing.T) {
 	resolved, err := test_resources.ExternalFile.Resolve()
 	if err != nil {

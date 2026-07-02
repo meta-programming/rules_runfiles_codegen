@@ -127,7 +127,7 @@ dependency. It is intended to be passed in the `entries` list of `kt_jvm_runfile
 | <a id="kt_runfile-targets"></a>targets |  A list of Bazel target labels to include in this entry. If multiple targets are specified, this entry is automatically treated as a `FileSet`.   |  `None` |
 | <a id="kt_runfile-doc"></a>doc |  A descriptive comment for the generated Kotlin property.   |  `""` |
 | <a id="kt_runfile-base"></a>base |  An optional path base to resolve relative paths for FileSet files. - If set to `""` (empty string), nothing is stripped (keeps full canonical paths). - If it starts with `//`, it is resolved relative to the library's repository root. - If it starts with `@`, it resolves relative to an external repository. - If it starts with `.`, it resolves relative to the library's package path. - If set to `"common_dir"`, it automatically computes the longest common prefix.   |  `None` |
-| <a id="kt_runfile-type"></a>type |  An optional explicit type assertion for the target. - `"auto"` (default): Automatically detects the type (file, directory, or fileset). - `"file"`: Asserts the target is a single file. - `"directory"`: Asserts the target is a TreeArtifact directory. - `"fileset"`: Forces the target to be treated as a FileSet.   |  `"auto"` |
+| <a id="kt_runfile-type"></a>type |  An optional explicit type assertion for the target. - `"auto"` (default): Automatically detects the type (file, directory, or fileset). - `"file"`: Asserts the target is a single file. - `"directory"`: Asserts the target is a TreeArtifact directory. - `"fileset"`: Forces the target to be treated as a FileSet. - `"executable"`: Asserts the target is an executable binary.   |  `"auto"` |
 
 **RETURNS**
 

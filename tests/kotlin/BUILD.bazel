@@ -56,6 +56,12 @@ kt_jvm_runfile_library(
             target = ":helper_bin",
         ),
         kt_runfile(
+            name = "explicitExecutable",
+            doc = "An executable with explicit type assertion.",
+            target = ":helper_bin",
+            type = "executable",
+        ),
+        kt_runfile(
             name = "externalFile",
             doc = "An external file from bazel_skylib.",
             target = "@bazel_skylib//:LICENSE",
