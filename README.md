@@ -13,7 +13,7 @@ For complete, runnable projects demonstrating these quickstarts, see the [exampl
 ## Key Features
 
 *   **Type-Safety**: Runfiles are exposed as generated constants/properties. No more stringly-typed paths.
-*   **Explicit (Non-Eager) Resolution**: We are evolving the library towards an explicit, non-eager resolution model to avoid startup side-effects and improve testability. Go is the first to adopt this design (using `Resolve()`), while Kotlin currently still resolves eagerly at startup but will be transitioned in a future release.
+*   **Explicit Resolution**: Both Go and Kotlin use an explicit, non-eager (lazy) resolution model to avoid startup side-effects and improve testability. The generated libraries expose unresolved specifications (e.g. `FileSpec`) that must be explicitly resolved at runtime.
 *   **Subprocess Environment Propagation**: Executable runfiles are wrapped in rich objects that facilitate launching them as subprocesses while automatically propagating the Bazel runfiles environment. This ensures that child processes can also resolve their own runfiles.[^1]
 *   **Zero Runtime Overhead**: After successful startup-time resolution, accessing the runfile path is a simple member access with zero overhead.
 
@@ -23,7 +23,7 @@ For complete, runnable projects demonstrating these quickstarts, see the [exampl
 
 ### Bzlmod Setup
 
-To use these rules in your Go project, add the following to your `MODULE.bazel` file:
+To use these rules in your Go project, add the following to your `MODULE.bazel` file (see [rules_runfile_codegen_go on BCR](https://registry.bazel.build/modules/rules_runfile_codegen_go)):
 
 <!-- GO_INSTALL_START -->
 ```bazel
@@ -31,26 +31,6 @@ To use these rules in your Go project, add the following to your `MODULE.bazel` 
 bazel_dep(name = "rules_runfile_codegen_go", version = "0.1.1")
 ```
 <!-- GO_INSTALL_END -->
-
-> [!NOTE]
-> **Pre-release Usage (Local Overrides)**:
-> Since this library is not yet published to the BCR, you must use `local_path_override` pointing to a local clone of this repository. Because overrides are not transitive, you must also explicitly override the core module:
->
-> ```bazel
-> # Core Module (Required for local development)
-> bazel_dep(name = "rules_runfile_codegen_core", version = "0.0.0")
-> local_path_override(
->     module_name = "rules_runfile_codegen_core",
->     path = "/path/to/runfile-codegen/repo/core",
-> )
->
-> # Go Module
-> bazel_dep(name = "rules_runfile_codegen_go", version = "0.0.0")
-> local_path_override(
->     module_name = "rules_runfile_codegen_go",
->     path = "/path/to/runfile-codegen/repo/go",
-> )
-> ```
 
 ### 1. Define the Runfile Library
 
@@ -209,7 +189,7 @@ var (
 
 ### Bzlmod Setup
 
-To use these rules in your Kotlin project, add the following to your `MODULE.bazel` file:
+To use these rules in your Kotlin project, add the following to your `MODULE.bazel` file (see [rules_runfile_codegen_kotlin on BCR](https://registry.bazel.build/modules/rules_runfile_codegen_kotlin)):
 
 <!-- KOTLIN_INSTALL_START -->
 ```bazel
@@ -217,26 +197,6 @@ To use these rules in your Kotlin project, add the following to your `MODULE.baz
 bazel_dep(name = "rules_runfile_codegen_kotlin", version = "0.1.1")
 ```
 <!-- KOTLIN_INSTALL_END -->
-
-> [!NOTE]
-> **Pre-release Usage (Local Overrides)**:
-> Since this library is not yet published to the BCR, you must use `local_path_override` pointing to a local clone of this repository. Because overrides are not transitive, you must also explicitly override the core module:
->
-> ```bazel
-> # Core Module (Required for local development)
-> bazel_dep(name = "rules_runfile_codegen_core", version = "0.0.0")
-> local_path_override(
->     module_name = "rules_runfile_codegen_core",
->     path = "/path/to/runfile-codegen/repo/core",
-> )
->
-> # Kotlin Module
-> bazel_dep(name = "rules_runfile_codegen_kotlin", version = "0.0.0")
-> local_path_override(
->     module_name = "rules_runfile_codegen_kotlin",
->     path = "/path/to/runfile-codegen/repo/kotlin",
-> )
-> ```
 
 ### 1. Define the Runfile Library
 
@@ -388,12 +348,10 @@ object Resources {
 
 ## Design Philosophy
 
-### Evolution Towards Non-Eager (Explicit) Resolution
-We are actively evolving the library away from eager resolution at startup towards an **explicit, non-eager (lazy)** model.
-
-*   **Why the shift?** Eager resolution (resolving everything during module initialization or `init` blocks) can cause dangerous side-effects, makes unit testing and mocking difficult, and violates best practices in many languages (especially Go).
-*   **Go (Modern)**: Uses the new explicit model. The generated code defines unresolved `FileSpec` and `ExecutableSpec` symbols. The developer must explicitly call `.Resolve()` or `.MustResolve()` at runtime. This avoids `init()` panics and allows injecting mock resolvers for testing.
-*   **Kotlin (Legacy/Transitioning)**: Currently still uses the older eager model (resolving during `Resources` object initialization). We plan to transition Kotlin and other future languages to the explicit model in upcoming releases to ensure consistency and safety.
+### Explicit (Non-Eager) Resolution
+Both Go and Kotlin use an explicit, non-eager (lazy) resolution model.
+*   **Why?** Eager resolution (resolving everything during module initialization or `init` blocks) can cause dangerous side-effects, makes unit testing and mocking difficult, and violates best practices.
+*   **How it works**: The generated code defines unresolved specifications (`FileSpec`, `ExecutableSpec`, `DirectorySpec`, `FileSetSpec`). Because runfile resolution can fail at runtime (e.g., if a data dependency is missing from the runfiles manifest), resolution is explicit and fallible. The developer must call `.Resolve()` (Go, which returns an error) or `.resolve()` (Kotlin, which throws a `RunfileResolutionException`) at runtime to obtain the resolved runfile reference. Go also provides `.MustResolve()` which panics on failure for cases where missing runfiles should be immediately fatal. This avoids initialization-time side-effects, handles failures gracefully, and allows injecting mock resolvers for testing.
 
 ### Rich Object Wrapper
 Rather than just returning raw string paths, the generators wrap runfiles in rich objects (`Runfile` and `ExecutableRunfile`).
