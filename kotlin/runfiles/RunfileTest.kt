@@ -107,4 +107,30 @@ class RunfileTest {
         assertTrue(resolvedPath.toFile().exists())
         assertEquals(spec.resolve().path, resolvedPath)
     }
+
+    @Test
+    fun testFileSetSpecShortcut() {
+        val filesMap = mapOf(
+            "file1.txt" to "foo/bar1.txt",
+            "file2.txt" to "foo/bar2.txt"
+        )
+        val mockResolver = MockResolver(mapOf(
+            "foo/bar1.txt" to "/abs/bar1.txt",
+            "foo/bar2.txt" to "/abs/bar2.txt"
+        ))
+
+        val spec = FileSetSpec(filesMap)
+        
+        // Use bracket operator on FileSetSpec to get FileSpec
+        val fileSpec1 = spec["file1.txt"]
+        assertEquals(RlocationPath("foo/bar1.txt"), fileSpec1.rlocationPath)
+        
+        // Resolve path via resolver to verify it works
+        assertEquals(Paths.get("/abs/bar1.txt"), fileSpec1.resolve(mockResolver).path)
+
+        // Verify invalid file throws exception
+        assertThrows(RunfileResolutionException::class.java) {
+            spec["unknown.txt"]
+        }
+    }
 }

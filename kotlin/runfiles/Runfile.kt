@@ -212,6 +212,15 @@ class FileSetSpec(
         }
         return FileSet(resolvedFiles)
     }
+
+    /**
+     * Returns an unresolved [FileSpec] for a file in this fileset by its relative path.
+     * Throws RunfileResolutionException if the file is not in this fileset.
+     */
+    operator fun get(relPath: String): FileSpec {
+        val rloc = files[relPath] ?: throw RunfileResolutionException("File $relPath is not in this fileset")
+        return FileSpec(RlocationPath(rloc))
+    }
 }
 
 /**
