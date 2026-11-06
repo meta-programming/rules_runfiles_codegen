@@ -1,0 +1,2 @@
+# Fail the clippy check on any warning, including a missing doc comment.
+build --@rules_rust//rust/settings:clippy_flags=-Dwarnings,-Dmissing_docs

@@ -1,0 +1,53 @@
+# # [START quickstart]
+load("@rules_runfile_codegen_rust//:defs.bzl", "rust_runfile", "rust_runfile_library")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+package(default_visibility = ["//visibility:private"])
+
+# A helper binary to demonstrate executable runfiles
+rust_binary(
+    name = "helper",
+    srcs = ["helper.rs"],
+)
+
+# Generate the runfile accessor crate
+rust_runfile_library(
+    name = "resources",
+    entries = [
+        rust_runfile(
+            name = "DATA_FILE",
+            target = "data/dummy.txt",
+            doc = "A dummy data file.",
+        ),
+        rust_runfile(
+            name = "HELPER_TOOL",
+            target = ":helper",
+            doc = "A helper tool executable.",
+        ),
+        rust_runfile(
+            name = "EXAMPLE_SET",
+            targets = ["data/dummy.txt", "data/info.txt"],
+            base = "common_dir",
+            doc = "A set of example data files.",
+        ),
+    ],
+)
+
+# Use the crate in a binary
+rust_binary(
+    name = "main",
+    srcs = ["main.rs"],
+    deps = [
+        ":resources",
+    ],
+)
+# # [END quickstart]
+
+# Test to ensure the example runs and works
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+sh_test(
+    name = "example_test",
+    srcs = ["run_test.sh"],
+    data = [":main"],
+)

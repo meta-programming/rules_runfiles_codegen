@@ -122,6 +122,7 @@ The project is designed to be fully compatible with publishing to the Bazel Cent
 *   **`rules_runfile_codegen_core`**: The dependency-free core generator.
 *   **`rules_runfile_codegen_go`**: The thin Go binder.
 *   **`rules_runfile_codegen_kotlin`**: The thin Kotlin binder.
+*   **`rules_runfile_codegen_rust`**: The thin Rust binder and its `runfile` runtime crate. See [LANGUAGE_SUPPORT.md](LANGUAGE_SUPPORT.md#34-rust-implemented).
 
 By splitting the project into separate modules, we ensure that users only pull in the dependencies they need (e.g., Go users do not pull in Kotlin/Java toolchains), respecting **REQ-3 (Minimal Dependencies)**.
 

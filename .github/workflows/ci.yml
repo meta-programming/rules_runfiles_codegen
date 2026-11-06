@@ -60,7 +60,7 @@ jobs:
         tools/devtool update-docs --build=false
         
         # Verify no changes were made to README or Stardoc files
-        git diff --exit-code README.md go/docs/defs.md kotlin/docs/defs.md || (
+        git diff --exit-code README.md go/docs/defs.md kotlin/docs/defs.md rust/docs/defs.md || (
           echo "=============================================================================="
           echo " ERROR: Documentation is out of sync."
           echo " Please run the following command locally and commit the changes:"

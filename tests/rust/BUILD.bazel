@@ -1,0 +1,256 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_test")
+load("@rules_runfile_codegen_rust//:defs.bzl", "rust_runfile", "rust_runfile_library")
+load("//:rules.bzl", "dir_producer")
+
+package(default_visibility = ["//visibility:private"])
+
+# An executable that reads its own runfile.
+rust_binary(
+    name = "helper_bin",
+    srcs = ["helper_bin.rs"],
+    data = ["data/helper_data.txt"],
+    deps = ["@rules_rust//rust/runfiles"],
+)
+
+# Consolidated filegroups (proving duplicate target mapping works)
+filegroup(
+    name = "collection_data",
+    srcs = [
+        "data/collection/file1.txt",
+        "data/collection/file2.txt",
+    ],
+)
+
+dir_producer(
+    name = "dir_data",
+)
+
+filegroup(
+    name = "wrapped_dir",
+    srcs = [":dir_data"],
+)
+
+filegroup(
+    name = "strict_file_data",
+    srcs = ["data/dummy.txt"],
+)
+
+dir_producer(
+    name = "strict_dir_data",
+)
+
+filegroup(
+    name = "forced_col_data",
+    srcs = ["data/dummy.txt"],
+)
+
+filegroup(
+    name = "mixed_collection",
+    srcs = [
+        ":dir_data",
+        "data/dummy.txt",
+    ],
+)
+
+genrule(
+    name = "gen_data",
+    outs = ["data/gen_data.txt"],
+    cmd = "echo 'generated' > $@",
+)
+
+filegroup(
+    name = "distant_collection",
+    srcs = [
+        "data/dummy.txt",
+        "@rules_rust//:MODULE.bazel",
+    ],
+)
+
+rust_runfile_library(
+    name = "test_resources",
+    entries = [
+        rust_runfile(
+            name = "SINGLE_FILE",
+            doc = "A single data file.",
+            target = "data/dummy.txt",
+        ),
+        rust_runfile(
+            name = "EXECUTABLE_FILE",
+            doc = "An executable tool.",
+            target = ":helper_bin",
+        ),
+        rust_runfile(
+            name = "EXPLICIT_EXECUTABLE",
+            doc = "An executable with explicit type assertion.",
+            target = ":helper_bin",
+            type = "executable",
+        ),
+        rust_runfile(
+            name = "EXTERNAL_FILE",
+            doc = "An external file from rules_rust.",
+            target = "@rules_rust//:MODULE.bazel",
+        ),
+        rust_runfile(
+            name = "GROUP_DATA",
+            doc = "A fileset of files with explicit relative base.",
+            target = ":collection_data",
+            base = "./data/collection",
+        ),
+        rust_runfile(
+            name = "GROUP_DATA_DEFAULT",
+            doc = "A fileset of files with default base (library package).",
+            target = ":collection_data",
+        ),
+        rust_runfile(
+            name = "DIR_DATA",
+            doc = "A directory of files.",
+            target = ":dir_data",
+        ),
+        rust_runfile(
+            name = "WRAPPED_DIR",
+            doc = "A directory wrapped in a filegroup.",
+            target = ":wrapped_dir",
+        ),
+        rust_runfile(
+            name = "MIXED_GROUP",
+            doc = "A mix of directory and file.",
+            target = ":mixed_collection",
+        ),
+        rust_runfile(
+            name = "GEN_DATA",
+            doc = "Generated data file.",
+            target = ":gen_data",
+        ),
+        rust_runfile(
+            name = "DISTANT_GROUP",
+            doc = "A fileset of files from different repos.",
+            target = ":distant_collection",
+        ),
+        rust_runfile(
+            name = "DISTANT_GROUP_FILTERED",
+            doc = "A fileset of files from different repos, filtered to only include main repo files under data/.",
+            target = ":distant_collection",
+            base = "//data",
+        ),
+        rust_runfile(
+            name = "DISTANT_GROUP_UNFILTERED",
+            doc = "A fileset of files from different repos, unfiltered (strip_prefix = '').",
+            target = ":distant_collection",
+            base = "",
+        ),
+        rust_runfile(
+            name = "MOCK_REPO_GROUP",
+            doc = "A fileset from external repo with repo-relative base.",
+            targets = ["@mock_repo//:files"],
+            base = "@mock_repo//data",
+        ),
+        rust_runfile(
+            name = "SUB_GROUP_PACKAGE_RELATIVE",
+            doc = "Subdir fileset with package-relative base.",
+            target = "//subdir:sub_collection1",
+            base = "./subdir/sub_data",
+        ),
+        rust_runfile(
+            name = "SUB_GROUP_REPO_RELATIVE",
+            doc = "Subdir fileset with repo-relative base.",
+            target = "//subdir:sub_collection2",
+            base = "//subdir/sub_data",
+        ),
+        rust_runfile(
+            name = "STRICT_FILE",
+            doc = "A file with explicit type assertion.",
+            target = ":strict_file_data",
+            type = "file",
+        ),
+        rust_runfile(
+            name = "STRICT_DIR",
+            doc = "A directory with explicit type assertion.",
+            target = ":strict_dir_data",
+            type = "directory",
+        ),
+        rust_runfile(
+            name = "STRICT_FILE_SET",
+            doc = "A fileset with explicit type assertion.",
+            target = ":collection_data",
+            base = "./data/collection",
+            type = "fileset",
+        ),
+        rust_runfile(
+            name = "FORCED_FILE_SET",
+            doc = "A single file forced to be a fileset.",
+            target = ":forced_col_data",
+            type = "fileset",
+        ),
+        rust_runfile(
+            name = "COMMON_DIR_FILE_SET",
+            doc = "A fileset using common_dir base.",
+            target = ":collection_data",
+            base = "common_dir",
+        ),
+        # Test duplicate targets mapping under different configurations
+        rust_runfile(
+            name = "DUPLICATE_TARGET1",
+            doc = "First mapping of collection_data with strip.",
+            target = ":collection_data",
+            base = "./data/collection",
+        ),
+        rust_runfile(
+            name = "DUPLICATE_TARGET2",
+            doc = "Second mapping of collection_data keeping full path.",
+            target = ":collection_data",
+            base = "",
+        ),
+        # Test multiple targets merged into a single fileset
+        rust_runfile(
+            name = "MIXED_FILE_SET",
+            doc = "A fileset merging local collection and subdir collection.",
+            targets = [
+                ":collection_data",
+                "//subdir:sub_collection2",
+            ],
+            base = "common_dir",
+        ),
+    ],
+)
+
+rust_test(
+    name = "integration_test",
+    srcs = ["integration_test.rs"],
+    deps = [
+        ":test_resources",
+        "@rules_runfile_codegen_rust//runfile",
+    ],
+)
+
+# The generated crate must pass clippy with -Dwarnings and -Dmissing_docs
+# (set in .bazelrc). Building this target runs the check.
+rust_clippy(
+    name = "test_resources_clippy",
+    testonly = True,
+    deps = [":test_resources"],
+)
+
+# Runfiles for the rustfmt check: the rustfmt wrapper from the Rust toolchain
+# and the generated source.
+rust_runfile_library(
+    name = "format_check_resources",
+    testonly = True,
+    entries = [
+        rust_runfile(
+            name = "RUSTFMT",
+            doc = "rustfmt from the registered Rust toolchain.",
+            target = "@rules_rust//tools/upstream_wrapper:rustfmt",
+        ),
+        rust_runfile(
+            name = "GENERATED_SOURCE",
+            doc = "The source generated for `:test_resources`.",
+            target = ":test_resources_codegen",
+        ),
+    ],
+)
+
+rust_test(
+    name = "format_test",
+    srcs = ["format_test.rs"],
+    deps = [":format_check_resources"],
+)
