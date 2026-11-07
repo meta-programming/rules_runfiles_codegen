@@ -1,0 +1,23 @@
+load("@rules_rust//rust:defs.bzl", "rust_doc_test", "rust_library", "rust_test")
+
+rust_library(
+    name = "runfile",
+    srcs = ["runfile.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@rules_rust//rust/runfiles",
+    ],
+)
+
+rust_test(
+    name = "runfile_test",
+    srcs = ["runfile_test.rs"],
+    edition = "2021",
+    deps = [":runfile"],
+)
+
+rust_doc_test(
+    name = "runfile_doc_test",
+    crate = ":runfile",
+)

@@ -8,6 +8,7 @@
     *   `core`: Core Starlark macros ([core/](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/core) directory).
     *   `go`: Go binder generator, tests, and examples ([go/](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/go), `tests/go`, `examples/go`).
     *   `kotlin`: Kotlin binder generator, tests, and examples ([kotlin/](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/kotlin), `tests/kotlin`, `examples/kotlin`).
+    *   `rust`: Rust binder generator, runtime crate, tests, and examples (`rust/`, `tests/rust`, `examples/rust`).
     *   `engprod`: Developer tools, CI/CD workflows, and repo-level configs ([tools/](file:///usr/local/google/home/reddaly/tcode/runfile-codegen/repo/tools), `.github/`).
 
 # Language and tone style rules

@@ -21,7 +21,7 @@ var versionCmd = &cobra.Command{
 
 var versionCheckCmd = &cobra.Command{
 	Use:   "check",
-	Short: "Verify that core, go, and kotlin modules have the same version",
+	Short: "Verify that core and all language modules have the same version",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runVersionCheck()
 	},
@@ -29,7 +29,7 @@ var versionCheckCmd = &cobra.Command{
 
 var versionSetCmd = &cobra.Command{
 	Use:   "set [version]",
-	Short: "Set the version in core, go, and kotlin MODULE.bazel files",
+	Short: "Set the version in the MODULE.bazel files of core and all language modules",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runVersionSet(args[0])
@@ -92,7 +92,7 @@ func runVersionCheck() error {
 		return fmt.Errorf("version mismatch detected")
 	}
 
-	fmt.Println("Core, go, and kotlin module versions and dependencies are consistent.")
+	fmt.Println("Core and language module versions and dependencies are consistent.")
 	return nil
 }
 
@@ -103,7 +103,7 @@ func runVersionSet(newVersion string) error {
 		modules = append(modules, lang.ID)
 	}
 
-	fmt.Printf("Setting version to %s in core, go, and kotlin modules...\n", newVersion)
+	fmt.Printf("Setting version to %s in core and language modules...\n", newVersion)
 
 	for _, mod := range modules {
 		path := filepath.Join(resolvedRoot, mod, "MODULE.bazel")
@@ -112,6 +112,6 @@ func runVersionSet(newVersion string) error {
 		}
 	}
 
-	fmt.Println("Successfully updated core, go, and kotlin module versions.")
+	fmt.Println("Successfully updated core and language module versions.")
 	return nil
 }

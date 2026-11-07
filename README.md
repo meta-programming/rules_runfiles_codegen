@@ -13,7 +13,7 @@ For complete, runnable projects demonstrating these quickstarts, see the [exampl
 ## Key Features
 
 *   **Type-Safety**: Runfiles are exposed as generated constants/properties. No more stringly-typed paths.
-*   **Explicit Resolution**: Both Go and Kotlin use an explicit, non-eager (lazy) resolution model to avoid startup side-effects and improve testability. The generated libraries expose unresolved specifications (e.g. `FileSpec`) that must be explicitly resolved at runtime.
+*   **Explicit Resolution**: Go, Kotlin, and Rust use an explicit, non-eager (lazy) resolution model to avoid startup side-effects and improve testability. The generated libraries expose unresolved specifications (e.g. `FileSpec`) that must be explicitly resolved at runtime.
 *   **Subprocess Environment Propagation**: Executable runfiles are wrapped in rich objects that facilitate launching them as subprocesses while automatically propagating the Bazel runfiles environment. This ensures that child processes can also resolve their own runfiles.[^1]
 *   **Zero Runtime Overhead**: After successful startup-time resolution, accessing the runfile path is a simple member access with zero overhead.
 
@@ -348,16 +348,160 @@ object Resources {
 
 ---
 
+## Rust Quickstart
+
+### Bzlmod Setup
+
+To use these rules in your Rust project, add the following to your `MODULE.bazel` file. The module needs [rules_rust](https://github.com/bazelbuild/rules_rust) with a registered Rust toolchain.
+
+<!-- RUST_INSTALL_START -->
+```bazel
+# MODULE.bazel
+bazel_dep(name = "rules_runfile_codegen_rust", version = "0.1.2")
+```
+<!-- RUST_INSTALL_END -->
+
+### 1. Define the Runfile Library
+
+Define a `rust_runfile_library` in your `BUILD.bazel` file. It generates a crate, named after the target, with one `pub static` per entry. Static names are upper snake case.
+
+<!-- RUST_BUILD_START -->
+```bazel
+load("@rules_runfile_codegen_rust//:defs.bzl", "rust_runfile", "rust_runfile_library")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+package(default_visibility = ["//visibility:private"])
+
+# A helper binary to demonstrate executable runfiles
+rust_binary(
+    name = "helper",
+    srcs = ["helper.rs"],
+)
+
+# Generate the runfile accessor crate
+rust_runfile_library(
+    name = "resources",
+    entries = [
+        rust_runfile(
+            name = "DATA_FILE",
+            target = "data/dummy.txt",
+            doc = "A dummy data file.",
+        ),
+        rust_runfile(
+            name = "HELPER_TOOL",
+            target = ":helper",
+            doc = "A helper tool executable.",
+        ),
+        rust_runfile(
+            name = "EXAMPLE_SET",
+            targets = ["data/dummy.txt", "data/info.txt"],
+            base = "common_dir",
+            doc = "A set of example data files.",
+        ),
+    ],
+)
+
+# Use the crate in a binary
+rust_binary(
+    name = "main",
+    srcs = ["main.rs"],
+    deps = [
+        ":resources",
+    ],
+)
+# #
+```
+<!-- RUST_BUILD_END -->
+
+### 2. Use the Generated Symbols in Rust
+
+Each static is an unresolved spec (`FileSpec`, `ExecutableSpec`, `DirectorySpec`, or `FileSetSpec`) from the `runfile` crate. Call `resolve()` to get a `Result`, or `must_resolve()` to panic if the runfile is missing. `command()` on a resolved executable returns a `std::process::Command` that passes `RUNFILES_DIR` or `RUNFILES_MANIFEST_FILE` to the child. Lookups use the [`runfiles` crate from rules_rust](https://github.com/bazelbuild/rules_rust/tree/main/rust/runfiles), so they work with a runfiles directory or with a manifest only.
+
+<!-- RUST_USAGE_START -->
+```rust
+use std::process::ExitCode;
+
+fn main() -> ExitCode {
+    // 1. Resolve a runfile, handling the error.
+    let data_file = match resources::DATA_FILE.resolve() {
+        Ok(file) => file,
+        Err(err) => {
+            eprintln!("Error resolving runfile: {err}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let content = std::fs::read_to_string(data_file.path()).expect("read data file");
+    println!("Data: {content}");
+
+    // 2. Run an executable runfile with the runfiles environment (fail-fast).
+    let helper = resources::HELPER_TOOL.must_resolve();
+    let output = helper.command().output().expect("run helper");
+    print!("Helper output: {}", String::from_utf8_lossy(&output.stdout));
+
+    // 3. Access a set of runfiles by relative path.
+    let example_set = resources::EXAMPLE_SET.must_resolve();
+    let paths: Vec<_> = example_set.rel_paths().collect();
+    println!("FileSet paths: {paths:?}");
+    let dummy = example_set.must_file("dummy.txt");
+    let dummy_content = std::fs::read_to_string(dummy.path()).expect("read dummy.txt");
+    println!("FileSet dummy content: {}", dummy_content.trim());
+    ExitCode::SUCCESS
+}
+```
+<!-- RUST_USAGE_END -->
+
+In unit tests, pass your own `runfile::Resolver` to `resolve_with()` instead of `resolve()`.
+
+The `runfile` crate reads the file system, so it does not build for `wasm32-unknown-unknown`. Use it in binaries and tests, not in browser code.
+
+### Actual Generated Rust Code
+
+<details>
+<summary>Click to view the actual generated Rust code for the example above</summary>
+
+<!-- GENERATED_RUST_START -->
+```rust
+// Code generated by rules_runfile_codegen. DO NOT EDIT.
+
+//! Typed accessors for the Bazel runfiles of `//:resources`.
+//!
+//! Each static is an unresolved spec from the `runfile` crate. Call
+//! `resolve()` to find the runfile on disk, or `must_resolve()` to panic if
+//! it is missing.
+
+/// A dummy data file.
+///
+/// Source: `//:data/dummy.txt`
+pub static DATA_FILE: runfile::FileSpec = runfile::FileSpec::new("_main/data/dummy.txt");
+
+/// A set of example data files.
+///
+/// Source: `//:data/dummy.txt, //:data/info.txt`
+pub static EXAMPLE_SET: runfile::FileSetSpec = runfile::file_set! {
+    "dummy.txt" => "_main/data/dummy.txt",
+    "info.txt" => "_main/data/info.txt",
+};
+
+/// A helper tool executable.
+///
+/// Source: `//:helper`
+pub static HELPER_TOOL: runfile::ExecutableSpec = runfile::ExecutableSpec::new("_main/helper");
+```
+<!-- GENERATED_RUST_END -->
+</details>
+
+---
+
 ## Design Philosophy
 
 ### Explicit (Non-Eager) Resolution
-Both Go and Kotlin use an explicit, non-eager (lazy) resolution model.
+Go, Kotlin, and Rust use an explicit, non-eager (lazy) resolution model.
 *   **Why?** Eager resolution (resolving everything during module initialization or `init` blocks) can cause dangerous side-effects, makes unit testing and mocking difficult, and violates best practices.
-*   **How it works**: The generated code defines unresolved specifications (`FileSpec`, `ExecutableSpec`, `DirectorySpec`, `FileSetSpec`). Because runfile resolution can fail at runtime (e.g., if a data dependency is missing from the runfiles manifest), resolution is explicit and fallible. The developer must call `.Resolve()` (Go, which returns an error) or `.resolve()` (Kotlin, which throws a `RunfileResolutionException`) at runtime to obtain the resolved runfile reference. Go also provides `.MustResolve()` which panics on failure for cases where missing runfiles should be immediately fatal. This avoids initialization-time side-effects, handles failures gracefully, and allows injecting mock resolvers for testing.
+*   **How it works**: The generated code defines unresolved specifications (`FileSpec`, `ExecutableSpec`, `DirectorySpec`, `FileSetSpec`). Because runfile resolution can fail at runtime (e.g., if a data dependency is missing from the runfiles manifest), resolution is explicit and fallible. The developer must call `.Resolve()` (Go, which returns an error), `.resolve()` (Kotlin, which throws a `RunfileResolutionException`), or `.resolve()` (Rust, which returns a `Result`) at runtime to obtain the resolved runfile reference. Go and Rust also provide `.MustResolve()` and `.must_resolve()`, which panic on failure for cases where missing runfiles should be immediately fatal. This avoids initialization-time side-effects, handles failures gracefully, and allows injecting mock resolvers for testing.
 
 ### Rich Object Wrapper
 Rather than just returning raw string paths, the generators wrap runfiles in rich objects (`Runfile` and `ExecutableRunfile`).
 *   This allows us to attach helper methods (like `jvmPath` in Kotlin to get a native `java.nio.file.Path` object).
-*   Crucially, it allows us to distinguish **executables** and provide safe execution wrappers (`Cmd` in Go, `processBuilder` in Kotlin) that automatically handle the propagation of Bazel runfiles environment variables. This solves the common "nested runfiles" problem where a tool run from a test cannot find its own dependencies.
+*   Crucially, it allows us to distinguish **executables** and provide safe execution wrappers (`Cmd` in Go, `processBuilder` in Kotlin, `command` in Rust) that automatically handle the propagation of Bazel runfiles environment variables. This solves the common "nested runfiles" problem where a tool run from a test cannot find its own dependencies.
 
 [^1]: Bazel runfiles discovery relies on environment variables like `RUNFILES_DIR` (path to the runfiles directory) and `RUNFILES_MANIFEST_FILE` (path to the manifest file mapping runfile paths to their physical locations, used when symlinks are not available, e.g., on Windows). If these variables are not propagated to child processes, those processes will fail to resolve their own runfiles. For details, see the [Bazel Runfiles Guide](https://bazel.build/extending/rules#runfiles) and the [Bazel Runfiles Library specification](https://github.com/bazelbuild/bazel/blob/master/tools/cpp/runfiles/runfiles_src.h).

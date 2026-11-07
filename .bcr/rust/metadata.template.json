@@ -1,0 +1,16 @@
+{
+  "name": "rules_runfile_codegen_rust",
+  "homepage": "https://github.com/meta-programming/rules_runfiles_codegen",
+  "maintainers": [
+    {
+      "name": "Red Daly",
+      "email": "reddaly@gmail.com",
+      "github": "reddaly"
+    }
+  ],
+  "repository": [
+    "github:meta-programming/rules_runfiles_codegen"
+  ],
+  "versions": [],
+  "yanked_versions": {}
+}

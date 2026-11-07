@@ -31,10 +31,13 @@ var targets = []testTarget{
 	{"core", "//internal/..."},
 	{"go", "//..."},
 	{"kotlin", "//..."},
+	{"rust", "//..."},
 	{"tests/go", "//..."},
 	{"tests/kotlin", "//..."},
+	{"tests/rust", "//..."},
 	{"examples/go", "//..."},
 	{"examples/kotlin", "//..."},
+	{"examples/rust", "//..."},
 }
 
 func runTests() error {

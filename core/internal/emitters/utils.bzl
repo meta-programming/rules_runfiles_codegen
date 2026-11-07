@@ -34,3 +34,13 @@ def sanitize_kdoc(doc):
     """
     # Replace */ with * / to prevent early termination of the block comment
     return doc.replace("*/", "* /")
+
+def escape_rust_string(s):
+    """Escapes a string for use in a double-quoted Rust string literal.
+
+    According to the Rust Reference on string literals
+    (https://doc.rust-lang.org/reference/tokens.html#string-literals),
+    backslashes and double quotes must be escaped (\\\\ and \\\"). Runfile
+    paths do not contain newlines, so no other escapes are needed.
+    """
+    return s.replace("\\", "\\\\").replace('"', '\\"')

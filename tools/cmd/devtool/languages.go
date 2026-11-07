@@ -2,7 +2,7 @@ package main
 
 // LanguageConfig defines the paths and markers for a language module's examples.
 type LanguageConfig struct {
-	ID         string // "go", "kotlin" (used in paths: examples/<ID>/)
+	ID         string // "go", "kotlin", "rust" (used in paths: examples/<ID>/)
 	LangMarker string // "GO", "KOTLIN" (used in README markers: <!-- <MARKER>_INSTALL_START -->)
 	Extension  string // "go", "kotlin" (used for markdown code block syntax highlighting)
 	UsageFile  string // "main.go", "Main.kt" (relative to examples/<ID>/)
@@ -39,5 +39,12 @@ var languages = []LanguageConfig{
 		Extension:  "kotlin",
 		UsageFile:  "Main.kt",
 		GenFile:    "bazel-bin/resources_codegen_gen.kt",
+	},
+	{
+		ID:         "rust",
+		LangMarker: "RUST",
+		Extension:  "rust",
+		UsageFile:  "main.rs",
+		GenFile:    "bazel-bin/resources_codegen_gen.rs",
 	},
 }

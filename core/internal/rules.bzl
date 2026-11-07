@@ -3,6 +3,7 @@
 load("//internal:analyzer.bzl", "analyze_entries")
 load("//internal/emitters:go.bzl", "emit_go")
 load("//internal/emitters:kotlin.bzl", "emit_kotlin")
+load("//internal/emitters:rust.bzl", "emit_rust")
 
 def _runfile_codegen_impl(ctx):
     language = ctx.attr.language
@@ -32,6 +33,12 @@ def _runfile_codegen_impl(ctx):
     elif language == "kotlin":
         ext = "kt"
         code = emit_kotlin(ctx.attr.package, entries, ctx.attr.object_name, str(ctx.label))
+    elif language == "rust":
+        ext = "rs"
+        library_label = str(ctx.label)
+        if library_label.endswith("_codegen"):
+            library_label = library_label[:-len("_codegen")]
+        code = emit_rust(entries, library_label)
     else:
         fail("Unsupported language: %s" % language)
 
@@ -47,7 +54,7 @@ runfile_codegen = rule(
     implementation = _runfile_codegen_impl,
     attrs = {
         "package": attr.string(mandatory = True),
-        "language": attr.string(mandatory = True, values = ["go", "kotlin"]),
+        "language": attr.string(mandatory = True, values = ["go", "kotlin", "rust"]),
         "targets": attr.label_list(mandatory = True, allow_files = True, providers = [DefaultInfo]),
         "config": attr.string(mandatory = True), # Serialized JSON config
         "object_name": attr.string(), # Optional, only used/required for Kotlin

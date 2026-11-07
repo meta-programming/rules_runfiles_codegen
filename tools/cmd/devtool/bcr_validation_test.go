@@ -14,7 +14,7 @@ func TestValidateBCRFiles(t *testing.T) {
 		t.Fatalf("failed to detect repo root: %v", err)
 	}
 
-	modules := []string{"core", "go", "kotlin"}
+	modules := []string{"core", "go", "kotlin", "rust"}
 
 	for _, mod := range modules {
 		t.Run(mod+"/presubmit", func(t *testing.T) {

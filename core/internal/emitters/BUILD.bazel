@@ -1,4 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//internal/emitters:rust_test.bzl", "rust_test_suite")
 load("//internal/emitters:template_test.bzl", "template_test_suite")
 load("//internal/emitters:utils_test.bzl", "utils_test_suite")
 
@@ -9,6 +10,7 @@ bzl_library(
     srcs = [
         "go.bzl",
         "kotlin.bzl",
+        "rust.bzl",
         "template.bzl",
         "utils.bzl",
     ],
@@ -17,3 +19,4 @@ bzl_library(
 
 template_test_suite(name = "template_tests")
 utils_test_suite(name = "utils_tests")
+rust_test_suite(name = "rust_tests")

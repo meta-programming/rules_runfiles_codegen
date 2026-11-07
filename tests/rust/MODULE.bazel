@@ -1,0 +1,33 @@
+module(
+    name = "rules_runfile_codegen_rust_tests",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.71.3")
+bazel_dep(name = "rules_runfile_codegen_rust", version = "0.0.0")
+bazel_dep(name = "rules_runfile_codegen_core", version = "0.0.0")
+
+local_path_override(
+    module_name = "rules_runfile_codegen_rust",
+    path = "../../rust",
+)
+
+local_path_override(
+    module_name = "rules_runfile_codegen_core",
+    path = "../../core",
+)
+
+bazel_dep(name = "mock_repo", version = "0.0.0")
+local_path_override(
+    module_name = "mock_repo",
+    path = "mock_repo",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    versions = ["1.88.0"],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")

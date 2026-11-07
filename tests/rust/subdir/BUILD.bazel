@@ -1,0 +1,19 @@
+filegroup(
+    name = "sub_collection1",
+    srcs = [
+        "sub_data/file1.txt",
+        "sub_data/file2.txt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "sub_collection2",
+    srcs = [
+        "sub_data/file1.txt",
+        "sub_data/file2.txt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+

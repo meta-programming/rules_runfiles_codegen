@@ -6,6 +6,8 @@ This document outlines the plan for extending `rules_runfile_codegen` to support
 
 ## 1. Overview & Core Principles
 
+Go, Kotlin, and Rust are implemented. The other languages below are plans.
+
 Regardless of the target language, all implementations should adhere to our core design principles:
 1.  **Type-Safety**: Expose runfiles as strongly-typed symbols, not raw strings.
 2.  **Explicit (Non-Eager) Resolution**: Evolve all language implementations towards an explicit, non-eager resolution model. Go is the first to implement this. While some languages (like Kotlin) may temporarily use eager resolution during transition, the long-term goal is to separate definition from resolution to improve testability and avoid startup side-effects.
@@ -28,7 +30,7 @@ To generate code that resolves runfiles, we must rely on the runtime libraries p
 | **Java / Kotlin** | `@bazel_tools//tools/java/runfiles` | **Zero** (built into `@bazel_tools`) | **Zero** (compiled against local jar; Maven artifact `com.google.devtools.build:runfiles` exists but is optional for Bazel-only builds) | **Excellent** (`envVars()`) | **Excellent** |
 | **Python** | `@rules_python//python/runfiles` | **Zero** (part of `rules_python`) | **Zero** (distributed as source within `rules_python`, no `pip` package needed) | **Excellent** (`EnvVars()`) | **Excellent** |
 | **C++** | `@bazel_tools//tools/cpp/runfiles` | **Zero** (built into `@bazel_tools`) | **Zero** (header-only/local library) | **Excellent** (`EnvVars()`) | **Excellent** |
-| **Rust** | `runfiles` (crate from `rules_rust`) | **Zero** (part of `rules_rust`) | **Optional** (crate `runfiles` exists on crates.io, but Bazel resolves it internally via `@rules_rust//tools/runfiles`) | **Good** (`env_vars()`) | **Good** |
+| **Rust** (implemented) | `runfiles` (crate from `rules_rust`) | **Zero** (part of `rules_rust`) | **Optional** (crate `runfiles` exists on crates.io, but Bazel resolves it internally via `@rules_rust//rust/runfiles`) | **Partial** (no env helper; `rules_runfile_codegen_rust` computes the variables) | **Good** |
 | **TypeScript / JS** | `@bazel/runfiles` | **Medium** (requires `rules_js` setup) | **Required** (must add `@bazel/runfiles` to `package.json`) | **Good** (`envVars()`) | **Good** |
 
 ---
@@ -340,17 +342,16 @@ public final class MyResources {
 
 ---
 
-### 3.4. Rust
+### 3.4. Rust (implemented)
 
-Rust uses `rules_rust` and the official `runfiles` crate.
+Rust support is the `rules_runfile_codegen_rust` module. It uses `rules_rust` and its `runfiles` crate (`@rules_rust//rust/runfiles`) for every lookup.
 
-#### BUILD.bazel Usage:
+#### BUILD.bazel usage:
 ```python
-load("@rules_runfile_codegen_rust//rust:defs.bzl", "rust_runfile_library", "rust_runfile")
+load("@rules_runfile_codegen_rust//:defs.bzl", "rust_runfile_library", "rust_runfile")
 
 rust_runfile_library(
-    name = "my_resources",
-    # Generates a module named my_resources
+    name = "my_resources",  # Also the crate name, unless crate_name is set.
     entries = [
         rust_runfile(
             name = "CONFIG_JSON",
@@ -366,82 +367,34 @@ rust_runfile_library(
 )
 ```
 
-#### Proposed Rust API Sketch:
-Rust does not support life before `main()` (no static constructors) without external crates. To keep dependencies minimal and idiomatic, we use `std::sync::OnceLock` for thread-safe lazy initialization, but we can also provide an explicit `validate()` function that users can call at the beginning of `main()` if they want to enforce eager startup checks.
+#### Generated code
+
+The generated crate has one `pub static` per entry. Each static is a spec from the `runfile` runtime crate (`@rules_runfile_codegen_rust//runfile`) and is built with a `const fn`, so declaring it does no I/O:
 
 ```rust
-// my_resources.rs
-use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::sync::OnceLock;
-use runfiles::Runfiles;
+/// A configuration file.
+///
+/// Source: `//path/to:config.json`
+pub static CONFIG_JSON: runfile::FileSpec = runfile::FileSpec::new("_main/path/to/config.json");
 
-static RUNFILES: OnceLock<Runfiles> = OnceLock::new();
-
-fn get_runfiles() -> &'static Runfiles {
-    RUNFILES.get_or_init(|| {
-        Runfiles::create().expect("FATAL: Failed to initialize runfiles registry")
-    })
-}
-
-fn resolve(rlocation_path: &str) -> PathBuf {
-    get_runfiles()
-        .rlocation(rlocation_path)
-        .unwrap_or_else(|| panic!("FATAL: Failed to resolve runfile: {}", rlocation_path))
-}
-
-pub struct Runfile {
-    rlocation_path: &'static str,
-    abs_path: OnceLock<PathBuf>,
-}
-
-impl Runfile {
-    const fn new(rlocation_path: &'static str) -> Self {
-        Self {
-            rlocation_path,
-            abs_path: OnceLock::new(),
-        }
-    }
-
-    pub fn path(&self) -> &Path {
-        self.abs_path.get_or_init(|| resolve(self.rlocation_path))
-    }
-}
-
-pub struct ExecutableRunfile {
-    runfile: Runfile,
-}
-
-impl ExecutableRunfile {
-    const fn new(rlocation_path: &'static str) -> Self {
-        Self {
-            runfile: Runfile::new(rlocation_path),
-        }
-    }
-
-    pub fn path(&self) -> &Path {
-        self.runfile.path()
-    }
-
-    pub fn cmd(&self) -> Command {
-        let mut cmd = Command::new(self.path());
-        for (k, v) in get_runfiles().env_vars() {
-            cmd.env(k, v);
-        }
-        cmd
-    }
-}
-
-// Generated symbols
-pub static CONFIG_JSON: Runfile = Runfile::new("_main/path/to/config.json");
-pub static HELPER_TOOL: ExecutableRunfile = ExecutableRunfile::new("_main/path/to/helper");
-
-/// Optional: Eager validation helper that users can call in main()
-pub fn validate() {
-    let _ = CONFIG_JSON.path();
-    let _ = HELPER_TOOL.path();
-}
+/// A helper tool.
+///
+/// Source: `//path/to/tools:helper`
+pub static HELPER_TOOL: runfile::ExecutableSpec =
+    runfile::ExecutableSpec::new("_main/path/to/tools/helper");
 ```
+
+File sets use the `runfile::file_set! { "rel" => "rlocation", }` macro. The emitter writes the layout `rustfmt` would choose. `rustfmt` leaves the body of a brace-delimited macro alone, so the macro keeps file sets stable. Every public item has a doc comment. The tests check the output with `rustfmt --check` and with clippy at `-Dwarnings -Dmissing_docs`.
+
+#### Runtime API
+
+*   `resolve()` returns `Result<File | Executable | Directory | FileSet, runfile::Error>`. It fails if the runfiles cannot be found or the file does not exist. The existence check matters because the `runfiles` crate returns a path for any lookup in directory mode.
+*   `must_resolve()` panics with the same error.
+*   `resolve_with(&dyn Resolver)` takes a substitute resolver for unit tests.
+*   `Executable::command()` returns a `std::process::Command`. It sets `RUNFILES_MANIFEST_FILE`, or `RUNFILES_DIR` and `JAVA_RUNFILES`, as absolute paths. The `runfiles` crate has no function that returns these variables, so the runtime crate computes them from the environment and from `runfiles::find_runfiles_dir()`.
+*   Generated rlocation paths are canonical (`_main/...`, `rules_foo+/...`), so lookups skip repository mapping.
+
+The runtime crate uses `std::fs` and `std::process`. It is for binaries and tests, not for `wasm32-unknown-unknown` targets.
 
 ---
 

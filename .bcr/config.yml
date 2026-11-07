@@ -2,3 +2,4 @@ moduleRoots:
   - core
   - go
   - kotlin
+  - rust
